@@ -487,8 +487,9 @@ function renderTaskGrid() {
   const userDisplayName = currentUser ? (currentUser.name || currentUser.email) : '';
 
   const filteredTasks = tasks.filter(task => {
-    // strictly displays tasks where the assignedTo matches the currently logged-in user
-    if (task.assignee !== userDisplayName) return false;
+    // Role-based rendering: admin sees all tasks, standard users see only their assigned tasks
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    if (!isAdmin && task.assignee !== userDisplayName) return false;
 
     if (activeFilter === 'pending' && task.status === 'completed') return false;
     if (activeFilter === 'completed' && task.status !== 'completed') return false;
@@ -704,9 +705,17 @@ function renderTaskGrid() {
 }
 
 function updateDashboardStats(tasksList) {
-  const pendingCount = tasksList.filter(t => t.status === 'pending' || t.status === 'updating').length;
-  const completedCount = tasksList.filter(t => t.status === 'completed').length;
-  const totalCount = tasksList.length;
+  const userDisplayName = currentUser ? (currentUser.name || currentUser.email) : '';
+  const isAdmin = currentUser && currentUser.role === 'admin';
+
+  // Role-based stats: admin calculates on all tasks, standard users calculate on their assigned tasks
+  const filteredList = isAdmin 
+    ? tasksList 
+    : tasksList.filter(t => t.assignee === userDisplayName);
+
+  const pendingCount = filteredList.filter(t => t.status === 'pending' || t.status === 'updating').length;
+  const completedCount = filteredList.filter(t => t.status === 'completed').length;
+  const totalCount = filteredList.length;
 
   if (pendingBadgeCount) {
     pendingBadgeCount.textContent = pendingCount;
