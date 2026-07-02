@@ -28,18 +28,17 @@
       <nav class="sidebar-menu">
         <div class="menu-group">
           <span class="menu-label">Workspace</span>
-          <a href="#" class="menu-item active" id="nav-dashboard">
+          <a href="#" class="menu-item active" id="nav-my-workspace">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-            Dashboard
+            My Workspace
           </a>
-          <a href="#" class="menu-item" id="nav-pending">
-            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            Pending Tasks
-            <span class="nav-badge" id="pending-badge-count">3</span>
+          <a href="#" class="menu-item" id="nav-team-workload">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Team Workload
           </a>
-          <a href="#" class="menu-item" id="nav-completed">
-            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            Completed Tasks
+          <a href="#" class="menu-item" id="nav-monthly-analytics" style="display: none;">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            Monthly Analytics
           </a>
         </div>
 
@@ -105,160 +104,207 @@
         </div>
       </header>
 
-      <!-- Stats Grid -->
-      <section class="stats-grid">
-        <!-- Stat Card 1: Pending Tasks -->
-        <div class="stat-card" id="stat-pending">
-          <div class="stat-glow green"></div>
-          <div class="stat-header">
-            <span class="stat-title">Pending Operations</span>
-            <div class="stat-icon-wrapper green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <!-- Tab 1: My Workspace -->
+      <div id="panel-my-workspace" class="workspace-panel">
+        <!-- Stats Grid -->
+        <section class="stats-grid">
+          <!-- Stat Card 1: Pending Tasks -->
+          <div class="stat-card" id="stat-pending">
+            <div class="stat-glow green"></div>
+            <div class="stat-header">
+              <span class="stat-title">Pending Operations</span>
+              <div class="stat-icon-wrapper green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+            </div>
+            <div class="stat-body">
+              <span class="stat-value" id="stats-pending-count">3</span>
+              <span class="stat-trend green">▲ Active</span>
+            </div>
+            <div class="stat-footer">
+              <div class="progress-bar-container">
+                <div class="progress-bar green" id="pending-progress" style="width: 60%"></div>
+              </div>
             </div>
           </div>
-          <div class="stat-body">
-            <span class="stat-value" id="stats-pending-count">3</span>
-            <span class="stat-trend green">▲ Active</span>
-          </div>
-          <div class="stat-footer">
-            <div class="progress-bar-container">
-              <div class="progress-bar green" id="pending-progress" style="width: 60%"></div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Stat Card 2: Completed Tasks -->
-        <div class="stat-card" id="stat-completed">
-          <div class="stat-glow blue"></div>
-          <div class="stat-header">
-            <span class="stat-title">Completed Work</span>
-            <div class="stat-icon-wrapper blue">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <!-- Stat Card 2: Completed Tasks -->
+          <div class="stat-card" id="stat-completed">
+            <div class="stat-glow blue"></div>
+            <div class="stat-header">
+              <span class="stat-title">Completed Work</span>
+              <div class="stat-icon-wrapper blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+            </div>
+            <div class="stat-body">
+              <span class="stat-value" id="stats-completed-count">5</span>
+              <span class="stat-trend blue">✓ Archive verified</span>
+            </div>
+            <div class="stat-footer">
+              <div class="progress-bar-container">
+                <div class="progress-bar blue" id="completed-progress" style="width: 62.5%"></div>
+              </div>
             </div>
           </div>
-          <div class="stat-body">
-            <span class="stat-value" id="stats-completed-count">5</span>
-            <span class="stat-trend blue">✓ Archive verified</span>
-          </div>
-          <div class="stat-footer">
-            <div class="progress-bar-container">
-              <div class="progress-bar blue" id="completed-progress" style="width: 62.5%"></div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Stat Card 3: Agency Velocity -->
-        <div class="stat-card" id="stat-velocity">
-          <div class="stat-glow purple"></div>
-          <div class="stat-header">
-            <span class="stat-title">Agency Output Rate</span>
-            <div class="stat-icon-wrapper purple">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <!-- Stat Card 3: Agency Velocity -->
+          <div class="stat-card" id="stat-velocity">
+            <div class="stat-glow purple"></div>
+            <div class="stat-header">
+              <span class="stat-title">Agency Output Rate</span>
+              <div class="stat-icon-wrapper purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              </div>
+            </div>
+            <div class="stat-body">
+              <span class="stat-value" id="stats-velocity-value">84%</span>
+              <span class="stat-trend purple">▲ +4.2% this cycle</span>
+            </div>
+            <div class="stat-footer">
+              <div class="progress-bar-container">
+                <div class="progress-bar purple" style="width: 84%"></div>
+              </div>
             </div>
           </div>
-          <div class="stat-body">
-            <span class="stat-value" id="stats-velocity-value">84%</span>
-            <span class="stat-trend purple">▲ +4.2% this cycle</span>
-          </div>
-          <div class="stat-footer">
-            <div class="progress-bar-container">
-              <div class="progress-bar purple" style="width: 84%"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- 4. ADD TASK FORM CONTAINER (ADMIN ONLY VIEW) -->
-      <section class="admin-only-section" id="admin-task-form-container">
+        <!-- 4. ADD TASK FORM CONTAINER (ADMIN ONLY VIEW) -->
+        <section class="admin-only-section" id="admin-task-form-container">
+          <div class="section-card">
+            <div class="card-header">
+              <div class="header-indicator">
+                <span class="indicator-pulse green"></span>
+                <h3>Create Operation Entry</h3>
+              </div>
+              <span class="badge badge-admin">Admin privilege active</span>
+            </div>
+            
+            <form id="add-task-form" class="task-form">
+              <div class="form-grid">
+                <div class="form-group col-span-2">
+                  <label for="task-title">Operation Title</label>
+                  <input type="text" id="task-title" required placeholder="e.g., Cinematic Wedding Highlight Reel">
+                </div>
+                
+                <div class="form-group">
+                  <label for="task-priority">Priority Protocol</label>
+                  <select id="task-priority" class="custom-select">
+                    <option value="high">HIGH [CRITICAL]</option>
+                    <option value="medium" selected>MEDIUM [STANDARD]</option>
+                    <option value="low">LOW [ROUTINE]</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="task-date">Completion Deadline</label>
+                  <input type="date" id="task-date" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="task-assignee">Operational Officer</label>
+                  <select id="task-assignee" class="custom-select">
+                    <option value="Sarah Connor">Sarah Connor (Developer)</option>
+                    <option value="Marcus Aurelius">Marcus Aurelius (Admin)</option>
+                    <option value="John Doe">John Doe (Researcher)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="task-tags">Classification Tag</label>
+                  <select id="task-tags" class="custom-select">
+                    <option value="Rough Cut & Assembly">Rough Cut & Assembly</option>
+                    <option value="DaVinci Resolve Color Grading">DaVinci Resolve Color Grading</option>
+                    <option value="CapCut Short-Form Edit">CapCut Short-Form Edit</option>
+                    <option value="Audio Sync & Sound Design">Audio Sync & Sound Design</option>
+                    <option value="Cinematic / 90s Aesthetic Styling">Cinematic / 90s Aesthetic Styling</option>
+                    <option value="Client Revisions">Client Revisions</option>
+                    <option value="Final Render & Delivery">Final Render & Delivery</option>
+                  </select>
+                </div>
+
+                <div class="form-group col-span-2">
+                  <label for="task-description">Operation Objectives / Details</label>
+                  <textarea id="task-description" rows="3" required placeholder="Describe task scope, technical deliverables, and core operational success criteria..."></textarea>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="reset" class="btn btn-secondary" id="btn-cancel-form">Reset Protocol</button>
+                <button type="submit" class="btn btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  Deploy Task
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Task Grid Section -->
+        <section class="task-section">
+          <div class="task-section-header">
+            <div class="section-title-wrap">
+              <h2>Active Operations</h2>
+              <div class="status-tab-filters">
+                <button class="tab-btn active" data-filter="all">All</button>
+                <button class="tab-btn" data-filter="pending">Pending</button>
+                <button class="tab-btn" data-filter="completed">Completed</button>
+              </div>
+            </div>
+            
+            <div class="grid-layout-controls">
+              <span class="active-count" id="filtered-count">8 tasks match criteria</span>
+            </div>
+          </div>
+
+          <!-- 2. INTERACTIVE TASK GRID -->
+          <div class="task-grid" id="task-grid-container">
+            <!-- Tasks will be dynamically injected here by Javascript -->
+          </div>
+        </section>
+      </div>
+
+      <!-- Tab 2: Team Workload -->
+      <section id="panel-team-workload" class="workspace-panel" style="display: none;">
         <div class="section-card">
           <div class="card-header">
             <div class="header-indicator">
-              <span class="indicator-pulse green"></span>
-              <h3>Create Operation Entry</h3>
+              <span class="indicator-pulse purple"></span>
+              <h3>Team Workload Leaderboard</h3>
             </div>
-            <span class="badge badge-admin">Admin privilege active</span>
+            <span class="subtitle">// Active task distribution across agency operators</span>
           </div>
-          
-          <form id="add-task-form" class="task-form">
-            <div class="form-grid">
-              <div class="form-group col-span-2">
-                <label for="task-title">Operation Title</label>
-                <input type="text" id="task-title" required placeholder="e.g., Cinematic Wedding Highlight Reel">
-              </div>
-              
-              <div class="form-group">
-                <label for="task-priority">Priority Protocol</label>
-                <select id="task-priority" class="custom-select">
-                  <option value="high">HIGH [CRITICAL]</option>
-                  <option value="medium" selected>MEDIUM [STANDARD]</option>
-                  <option value="low">LOW [ROUTINE]</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="task-date">Completion Deadline</label>
-                <input type="date" id="task-date" required>
-              </div>
-
-              <div class="form-group">
-                <label for="task-assignee">Operational Officer</label>
-                <select id="task-assignee" class="custom-select">
-                  <option value="Sarah Connor">Sarah Connor (Developer)</option>
-                  <option value="Marcus Aurelius">Marcus Aurelius (Admin)</option>
-                  <option value="John Doe">John Doe (Researcher)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="task-tags">Classification Tag</label>
-                <select id="task-tags" class="custom-select">
-                  <option value="Rough Cut & Assembly">Rough Cut & Assembly</option>
-                  <option value="DaVinci Resolve Color Grading">DaVinci Resolve Color Grading</option>
-                  <option value="CapCut Short-Form Edit">CapCut Short-Form Edit</option>
-                  <option value="Audio Sync & Sound Design">Audio Sync & Sound Design</option>
-                  <option value="Cinematic / 90s Aesthetic Styling">Cinematic / 90s Aesthetic Styling</option>
-                  <option value="Client Revisions">Client Revisions</option>
-                  <option value="Final Render & Delivery">Final Render & Delivery</option>
-                </select>
-              </div>
-
-              <div class="form-group col-span-2">
-                <label for="task-description">Operation Objectives / Details</label>
-                <textarea id="task-description" rows="3" required placeholder="Describe task scope, technical deliverables, and core operational success criteria..."></textarea>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="reset" class="btn btn-secondary" id="btn-cancel-form">Reset Protocol</button>
-              <button type="submit" class="btn btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Deploy Task
-              </button>
-            </div>
-          </form>
+          <div class="leaderboard-container" id="leaderboard-container">
+            <!-- Dynamic leaderboard will be injected here -->
+          </div>
         </div>
       </section>
 
-      <!-- Task Grid Section -->
-      <section class="task-section">
-        <div class="task-section-header">
-          <div class="section-title-wrap">
-            <h2>Active Operations</h2>
-            <div class="status-tab-filters">
-              <button class="tab-btn active" data-filter="all">All</button>
-              <button class="tab-btn" data-filter="pending">Pending</button>
-              <button class="tab-btn" data-filter="completed">Completed</button>
+      <!-- Tab 3: Monthly Analytics -->
+      <section id="panel-monthly-analytics" class="workspace-panel" style="display: none;">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="header-indicator">
+              <span class="indicator-pulse blue"></span>
+              <h3>Monthly Operational Analytics</h3>
             </div>
+            <span class="badge badge-admin">Administrative Audit Only</span>
           </div>
           
-          <div class="grid-layout-controls">
-            <span class="active-count" id="filtered-count">8 tasks match criteria</span>
-          </div>
-        </div>
+          <div class="analytics-report-container">
+            <!-- Summary stats cards -->
+            <div class="stats-grid" id="analytics-stats-grid">
+              <!-- Dynamically populated completed ops, active editors, output rate -->
+            </div>
 
-        <!-- 2. INTERACTIVE TASK GRID -->
-        <div class="task-grid" id="task-grid-container">
-          <!-- Tasks will be dynamically injected here by Javascript -->
+            <!-- Breakdown list by editor -->
+            <div class="editor-breakdown-card">
+              <h4>Task Breakdown By Editor</h4>
+              <div class="editor-breakdown-list" id="editor-breakdown-list">
+                <!-- Dynamically populated breakdown -->
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

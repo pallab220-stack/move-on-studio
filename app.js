@@ -57,6 +57,7 @@ let tasks = [];
 let currentUser = null;
 let activeFilter = 'all';
 let searchQuery = '';
+let activeTab = 'my-workspace'; // 'my-workspace', 'team-workload', 'monthly-analytics'
 
 // DOM Elements
 const taskGridContainer = document.getElementById('task-grid-container');
@@ -90,9 +91,9 @@ const tabSignup = document.getElementById('tab-signup');
 const btnAuthSubmit = document.getElementById('btn-auth-submit');
 
 const searchInput = document.getElementById('search-input');
-const navDashboard = document.getElementById('nav-dashboard');
-const navPending = document.getElementById('nav-pending');
-const navCompleted = document.getElementById('nav-completed');
+const navMyWorkspace = document.getElementById('nav-my-workspace');
+const navTeamWorkload = document.getElementById('nav-team-workload');
+const navMonthlyAnalytics = document.getElementById('nav-monthly-analytics');
 const navAdmin = document.getElementById('nav-admin');
 
 // 3. SYSTEM CLOCK SETUP
@@ -198,12 +199,17 @@ async function checkUserRole(uid) {
     btnNewTaskShortcut.style.display = 'inline-flex';
     document.querySelector('.lock-indicator').style.display = 'none';
     navAdmin.classList.remove('restricted');
+    if (navMonthlyAnalytics) navMonthlyAnalytics.style.display = 'inline-flex';
   } else {
     greetingTitle.textContent = `Welcome back, Operator`;
     adminTaskFormContainer.style.display = 'none';
     btnNewTaskShortcut.style.display = 'none';
     document.querySelector('.lock-indicator').style.display = 'flex';
     navAdmin.classList.add('restricted');
+    if (navMonthlyAnalytics) navMonthlyAnalytics.style.display = 'none';
+    if (activeTab === 'monthly-analytics') {
+      switchTab('my-workspace');
+    }
   }
 
   renderTaskGrid();
@@ -247,6 +253,10 @@ function updateUIElements() {
   btnNewTaskShortcut.style.display = 'none';
   document.querySelector('.lock-indicator').style.display = 'flex';
   navAdmin.classList.add('restricted');
+  if (navMonthlyAnalytics) navMonthlyAnalytics.style.display = 'none';
+  if (activeTab === 'monthly-analytics') {
+    switchTab('my-workspace');
+  }
 
   btnTriggerLogin.innerHTML = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
@@ -319,8 +329,14 @@ function loadTasks() {
     // Sort tasks by creation date
     tasks.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    renderTaskGrid();
-    updateStats();
+    if (activeTab === 'my-workspace') {
+      renderTaskGrid();
+      updateStats();
+    } else if (activeTab === 'team-workload') {
+      renderTeamWorkload();
+    } else if (activeTab === 'monthly-analytics') {
+      renderMonthlyAnalytics();
+    }
     console.log("loadTasks: Grid synced with Firestore in real-time.");
   }, (error) => {
     console.error("loadTasks Snapshot Error:", error.message);
@@ -400,11 +416,13 @@ async function toggleTaskCompletion(id) {
 
   const isCompleted = task.status === 'completed';
   const newStatus = isCompleted ? 'pending' : 'completed';
+  const completedAtVal = !isCompleted ? new Date().toISOString() : null;
 
   try {
     await updateDoc(doc(db, "tasks", id), {
       status: newStatus,
-      completed: !isCompleted
+      completed: !isCompleted,
+      completedAt: completedAtVal
     });
   } catch (error) {
     console.error("toggleTaskCompletion Error:", error.message);
@@ -421,7 +439,8 @@ async function toggleTaskUpdating(id) {
   try {
     await updateDoc(doc(db, "tasks", id), {
       status: newStatus,
-      completed: false
+      completed: false,
+      completedAt: null
     });
   } catch (error) {
     console.error("toggleTaskUpdating Error:", error.message);
@@ -465,7 +484,12 @@ async function fetchUsersAndPopulateDropdown() {
 function renderTaskGrid() {
   taskGridContainer.innerHTML = '';
 
+  const userDisplayName = currentUser ? (currentUser.name || currentUser.email) : '';
+
   const filteredTasks = tasks.filter(task => {
+    // strictly displays tasks where the assignedTo matches the currently logged-in user
+    if (task.assignee !== userDisplayName) return false;
+
     if (activeFilter === 'pending' && task.status === 'completed') return false;
     if (activeFilter === 'completed' && task.status !== 'completed') return false;
 
@@ -680,9 +704,13 @@ function renderTaskGrid() {
 }
 
 function updateStats() {
-  const pendingCount = tasks.filter(t => t.status === 'pending' || t.status === 'updating').length;
-  const completedCount = tasks.filter(t => t.status === 'completed').length;
-  const totalCount = tasks.length;
+  // Filter tasks assigned to current user (isolated workspace)
+  const userDisplayName = currentUser ? (currentUser.name || currentUser.email) : '';
+  const myTasks = tasks.filter(t => t.assignee === userDisplayName);
+
+  const pendingCount = myTasks.filter(t => t.status === 'pending' || t.status === 'updating').length;
+  const completedCount = myTasks.filter(t => t.status === 'completed').length;
+  const totalCount = myTasks.length;
 
   pendingBadgeCount.textContent = pendingCount;
   statsPendingCount.textContent = pendingCount;
@@ -804,46 +832,61 @@ tabButtons.forEach(btn => {
     tabButtons.forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     activeFilter = e.target.getAttribute('data-filter');
-    syncSidebarNav(activeFilter);
     renderTaskGrid();
   });
 });
 
-function syncSidebarNav(filterVal) {
-  navDashboard.classList.remove('active');
-  navPending.classList.remove('active');
-  navCompleted.classList.remove('active');
+// Tab selection state and helpers
 
-  if (filterVal === 'all') navDashboard.classList.add('active');
-  if (filterVal === 'pending') navPending.classList.add('active');
-  if (filterVal === 'completed') navCompleted.classList.add('active');
+function switchTab(tabId) {
+  activeTab = tabId;
+
+  // Toggle active class on sidebar menu items
+  navMyWorkspace.classList.remove('active');
+  navTeamWorkload.classList.remove('active');
+  navMonthlyAnalytics.classList.remove('active');
+
+  if (tabId === 'my-workspace') navMyWorkspace.classList.add('active');
+  if (tabId === 'team-workload') navTeamWorkload.classList.add('active');
+  if (tabId === 'monthly-analytics') navMonthlyAnalytics.classList.add('active');
+
+  // Show/Hide main panels
+  const panelWorkspace = document.getElementById('panel-my-workspace');
+  const panelTeamWorkload = document.getElementById('panel-team-workload');
+  const panelMonthlyAnalytics = document.getElementById('panel-monthly-analytics');
+
+  if (panelWorkspace) panelWorkspace.style.display = tabId === 'my-workspace' ? 'block' : 'none';
+  if (panelTeamWorkload) panelTeamWorkload.style.display = tabId === 'team-workload' ? 'block' : 'none';
+  if (panelMonthlyAnalytics) panelMonthlyAnalytics.style.display = tabId === 'monthly-analytics' ? 'block' : 'none';
+
+  // Run tab-specific rendering logic
+  if (tabId === 'my-workspace') {
+    renderTaskGrid();
+    updateStats();
+  } else if (tabId === 'team-workload') {
+    renderTeamWorkload();
+  } else if (tabId === 'monthly-analytics') {
+    renderMonthlyAnalytics();
+  }
 }
 
-navDashboard.addEventListener('click', (e) => {
+navMyWorkspace.addEventListener('click', (e) => {
   e.preventDefault();
-  activeFilter = 'all';
-  tabButtons.forEach(b => b.classList.remove('active'));
-  document.querySelector('.tab-btn[data-filter="all"]').classList.add('active');
-  syncSidebarNav('all');
-  renderTaskGrid();
+  switchTab('my-workspace');
 });
 
-navPending.addEventListener('click', (e) => {
+navTeamWorkload.addEventListener('click', (e) => {
   e.preventDefault();
-  activeFilter = 'pending';
-  tabButtons.forEach(b => b.classList.remove('active'));
-  document.querySelector('.tab-btn[data-filter="pending"]').classList.add('active');
-  syncSidebarNav('pending');
-  renderTaskGrid();
+  switchTab('team-workload');
 });
 
-navCompleted.addEventListener('click', (e) => {
+navMonthlyAnalytics.addEventListener('click', (e) => {
   e.preventDefault();
-  activeFilter = 'completed';
-  tabButtons.forEach(b => b.classList.remove('active'));
-  document.querySelector('.tab-btn[data-filter="completed"]').classList.add('active');
-  syncSidebarNav('completed');
-  renderTaskGrid();
+  if (currentUser && currentUser.role === 'admin') {
+    switchTab('monthly-analytics');
+  } else {
+    alert("Access Denied: Administrative credentials required.");
+  }
 });
 
 navAdmin.addEventListener('click', (e) => {
@@ -853,6 +896,9 @@ navAdmin.addEventListener('click', (e) => {
   } else if (currentUser.role !== 'admin') {
     alert("Administrative panel locked. Requires elevated access clearance.");
   } else {
+    if (activeTab !== 'my-workspace') {
+      switchTab('my-workspace');
+    }
     adminTaskFormContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 });
@@ -981,6 +1027,176 @@ function showLocalNotificationToast(title, body) {
 
   closeBtn.addEventListener('click', dismissToast);
   setTimeout(dismissToast, 6000); // Auto-dismiss after 6 seconds
+}
+
+// Helper to check if a date string is in the current month
+function isCurrentMonth(dateString) {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
+
+// Team Workload Distribution Leaderboard logic
+async function renderTeamWorkload() {
+  const container = document.getElementById('leaderboard-container');
+  if (!container) return;
+
+  try {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    const userTaskCounts = {};
+    const usersList = [];
+
+    querySnapshot.forEach((docSnap) => {
+      const userData = docSnap.data();
+      const displayName = userData.name || userData.email || 'Unknown Agent';
+      usersList.push(displayName);
+      userTaskCounts[displayName] = 0;
+    });
+
+    tasks.forEach(task => {
+      if (task.status === 'pending' || task.status === 'updating') {
+        const assignee = task.assignee;
+        if (userTaskCounts[assignee] !== undefined) {
+          userTaskCounts[assignee]++;
+        } else {
+          userTaskCounts[assignee] = 1;
+          usersList.push(assignee);
+        }
+      }
+    });
+
+    container.innerHTML = '';
+    const leaderboardList = document.createElement('div');
+    leaderboardList.className = 'leaderboard-list';
+
+    const sortedUsers = Object.keys(userTaskCounts).map(name => ({
+      name,
+      count: userTaskCounts[name]
+    })).sort((a, b) => b.count - a.count);
+
+    sortedUsers.forEach(user => {
+      const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      const isHighLoad = user.count >= 3;
+      
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+      item.innerHTML = `
+        <div class="leaderboard-user-info">
+          <div class="leaderboard-avatar">${initials}</div>
+          <span class="leaderboard-name">${user.name}</span>
+        </div>
+        <span class="leaderboard-count-badge ${isHighLoad ? 'high-load' : ''}">
+          ${user.count} Active Project${user.count === 1 ? '' : 's'}
+        </span>
+      `;
+      leaderboardList.appendChild(item);
+    });
+
+    container.appendChild(leaderboardList);
+  } catch (error) {
+    console.error("Error rendering team workload:", error);
+    container.innerHTML = `<p class="error-msg">Error loading workload leaderboard: ${error.message}</p>`;
+  }
+}
+
+// Admin Monthly Analytics logic
+async function renderMonthlyAnalytics() {
+  const statsGrid = document.getElementById('analytics-stats-grid');
+  const breakdownList = document.getElementById('editor-breakdown-list');
+  if (!statsGrid || !breakdownList) return;
+
+  const currentMonthCompletedTasks = tasks.filter(task => {
+    if (task.status !== 'completed') return false;
+    const dateToCheck = task.completedAt || task.date;
+    return isCurrentMonth(dateToCheck);
+  });
+
+  const totalCompleted = currentMonthCompletedTasks.length;
+
+  const editorCounts = {};
+  currentMonthCompletedTasks.forEach(task => {
+    const editor = task.assignee || 'Unassigned';
+    editorCounts[editor] = (editorCounts[editor] || 0) + 1;
+  });
+
+  let mostActiveEditor = 'None';
+  let maxCompleted = 0;
+  Object.keys(editorCounts).forEach(editor => {
+    if (editorCounts[editor] > maxCompleted) {
+      maxCompleted = editorCounts[editor];
+      mostActiveEditor = editor;
+    }
+  });
+
+  const tasksCreatedThisMonth = tasks.filter(task => isCurrentMonth(task.createdAt));
+  const createdCount = tasksCreatedThisMonth.length || 1;
+  const monthlyCompletionRate = Math.round((totalCompleted / createdCount) * 100);
+
+  statsGrid.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-glow green"></div>
+      <div class="stat-header">
+        <span class="stat-title">Monthly Completions</span>
+        <div class="stat-icon-wrapper green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">${totalCompleted}</span>
+        <span class="stat-trend green">✓ Operations</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-glow blue"></div>
+      <div class="stat-header">
+        <span class="stat-title">Top Performer</span>
+        <div class="stat-icon-wrapper blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        </div>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value" style="font-size: 1.2rem; line-height: 2.2rem; font-weight: 700;">${mostActiveEditor}</span>
+        <span class="stat-trend blue">${maxCompleted > 0 ? `${maxCompleted} task${maxCompleted === 1 ? '' : 's'} completed` : 'No completions'}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-glow purple"></div>
+      <div class="stat-header">
+        <span class="stat-title">Monthly Efficiency</span>
+        <div class="stat-icon-wrapper purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        </div>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">${monthlyCompletionRate}%</span>
+        <span class="stat-trend purple">▲ Completed vs Created</span>
+      </div>
+    </div>
+  `;
+
+  breakdownList.innerHTML = '';
+  if (Object.keys(editorCounts).length === 0) {
+    breakdownList.innerHTML = `<div class="empty-state" style="color: var(--text-muted); font-size: 0.8rem; font-style: italic; padding: 12px 0;">// No task completions recorded in the current month.</div>`;
+    return;
+  }
+
+  const sortedBreakdown = Object.keys(editorCounts).map(editor => ({
+    name: editor,
+    count: editorCounts[editor]
+  })).sort((a, b) => b.count - a.count);
+
+  sortedBreakdown.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'editor-breakdown-item';
+    row.innerHTML = `
+      <span class="editor-breakdown-name">${item.name}</span>
+      <span class="editor-breakdown-count">${item.count} task${item.count === 1 ? '' : 's'}</span>
+    `;
+    breakdownList.appendChild(row);
+  });
 }
 
 // 8. DIAGNOSTIC SYSTEM BANNER SETUP
