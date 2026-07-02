@@ -236,7 +236,9 @@ onAuthStateChanged(auth, async (user) => {
     updateUIElements();
     renderTaskGrid();
     updateDashboardStats(tasks);
-    openModal();
+    if (sessionStorage.getItem('selectedBranch')) {
+      openModal();
+    }
   }
 });
 
@@ -1225,9 +1227,65 @@ function setupSystemBanner() {
   document.body.appendChild(banner);
 }
 
+// 11. BRANCH SELECTION GATEWAY LOGIC
+let currentBranch = sessionStorage.getItem('selectedBranch') || null;
+
+function applyBranchSettings(branch) {
+  currentBranch = branch;
+  sessionStorage.setItem('selectedBranch', branch);
+
+  const agencyLogoImg = document.querySelector('.agency-logo');
+  const gatewayScreen = document.getElementById('branch-gateway');
+
+  if (branch === 'jadukor') {
+    document.title = "Jadukor Studio // Task Workspace";
+    if (agencyLogoImg) {
+      agencyLogoImg.src = "jadukor-logo.png";
+      agencyLogoImg.alt = "Jadukor Logo";
+    }
+  } else if (branch === 'moveon') {
+    document.title = "Move On Studio // Task Workspace";
+    if (agencyLogoImg) {
+      agencyLogoImg.src = "logo.png";
+      agencyLogoImg.alt = "Move On Logo";
+    }
+  }
+
+  // Fade out and hide gateway screen
+  if (gatewayScreen) {
+    gatewayScreen.classList.add('fade-out');
+  }
+
+  // Trigger login modal if user is not logged in
+  if (!currentUser) {
+    openModal();
+  }
+}
+
+// Bind click handlers to cards
+const jadukorCard = document.getElementById('gateway-branch-jadukor');
+const moveonCard = document.getElementById('gateway-branch-moveon');
+
+if (jadukorCard) {
+  jadukorCard.addEventListener('click', () => {
+    applyBranchSettings('jadukor');
+  });
+}
+
+if (moveonCard) {
+  moveonCard.addEventListener('click', () => {
+    applyBranchSettings('moveon');
+  });
+}
+
 // Initial Boot setup
 setupSystemBanner();
 updateUIElements();
 loadTasks();
 fetchUsersAndPopulateDropdown();
 registerMessagingServiceWorker();
+
+// Auto-run if branch is already active in session
+if (currentBranch) {
+  applyBranchSettings(currentBranch);
+}

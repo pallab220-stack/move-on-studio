@@ -1789,3 +1789,180 @@ body {
   color: var(--accent-blue);
 }
 
+/* 10. BRANCH SELECTION GATEWAY */
+#branch-gateway {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, #0f0f15 0%, #030305 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  opacity: 1;
+  transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0.5s;
+}
+
+#branch-gateway.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.gateway-container {
+  max-width: 900px;
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.gateway-header {
+  margin-bottom: 48px;
+}
+
+.gateway-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gateway-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.gateway-cards {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.gateway-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 48px 32px;
+  width: 350px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
+              border-color 0.4s, 
+              box-shadow 0.4s;
+  overflow: hidden;
+}
+
+.gateway-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.gateway-card#gateway-branch-jadukor:hover {
+  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.gateway-card#gateway-branch-moveon:hover {
+  box-shadow: 0 12px 40px rgba(0, 176, 255, 0.15);
+  border-color: rgba(0, 176, 255, 0.3);
+}
+
+.gateway-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  border-radius: 40%;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.4s;
+}
+
+.gateway-card:hover .gateway-glow {
+  opacity: 0.08;
+}
+
+.gateway-glow.gold {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.5) 0%, transparent 70%);
+}
+
+.gateway-glow.blue {
+  background: radial-gradient(circle, rgba(0, 176, 255, 0.5) 0%, transparent 70%);
+}
+
+.gateway-logo {
+  max-height: 80px;
+  max-width: 180px;
+  object-fit: contain;
+  margin-bottom: 24px;
+  z-index: 1;
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.gateway-card:hover .gateway-logo {
+  transform: scale(1.08);
+}
+
+.gateway-card h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  z-index: 1;
+  position: relative;
+}
+
+.gateway-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 28px;
+  height: 40px;
+  z-index: 1;
+  position: relative;
+}
+
+.gateway-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+  z-index: 1;
+  position: relative;
+}
+
+.gateway-card#gateway-branch-jadukor:hover .gateway-btn {
+  background: #d4af37;
+  border-color: #d4af37;
+  color: #000;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.gateway-card#gateway-branch-moveon:hover .gateway-btn {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #000;
+  box-shadow: 0 4px 12px rgba(0, 176, 255, 0.3);
+}
+
+
