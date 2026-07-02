@@ -519,24 +519,57 @@ async function deleteOldTask(id) {
 }
 
 // Function to fetch all user documents and populate the assignee dropdown
+// Function to fetch all user documents and populate user-selection dropdowns
 async function fetchUsersAndPopulateDropdown() {
   const assigneeSelect = document.getElementById('task-assignee');
-  if (!assigneeSelect) return;
+  const photographerSelect = document.getElementById('shoot-photographer');
+  const cinematographerSelect = document.getElementById('shoot-cinematographer');
 
   try {
     const querySnapshot = await getDocs(collection(db, "users"));
-    assigneeSelect.innerHTML = '';
+    
+    // Clear select options, preserving placeholders
+    if (assigneeSelect) assigneeSelect.innerHTML = '';
+    
+    if (photographerSelect) {
+      photographerSelect.innerHTML = '<option value="">-- Select Photographer --</option>';
+    }
+    if (cinematographerSelect) {
+      cinematographerSelect.innerHTML = '<option value="">-- Select Cinematographer --</option>';
+    }
+
     querySnapshot.forEach((docSnap) => {
       const userData = docSnap.data();
       const name = userData.name || userData.email;
       if (name) {
-        const option = document.createElement('option');
-        option.value = name.trim();
-        option.textContent = name.trim();
-        assigneeSelect.appendChild(option);
+        const optionVal = name.trim();
+
+        // Populate Assignee select
+        if (assigneeSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          assigneeSelect.appendChild(opt);
+        }
+
+        // Populate Photographer select
+        if (photographerSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          photographerSelect.appendChild(opt);
+        }
+
+        // Populate Cinematographer select
+        if (cinematographerSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          cinematographerSelect.appendChild(opt);
+        }
       }
     });
-    console.log("fetchUsersAndPopulateDropdown: Dropdown successfully populated.");
+    console.log("fetchUsersAndPopulateDropdown: Assignee, Photographer, and Cinematographer dropdowns successfully populated.");
   } catch (error) {
     console.error("fetchUsersAndPopulateDropdown Error:", error.message);
   }
