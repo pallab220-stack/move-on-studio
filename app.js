@@ -235,8 +235,13 @@ onAuthStateChanged(auth, async (user) => {
     closeModal();
 
     // Determine gateway vs dashboard transition
-    const storedBranch = sessionStorage.getItem('selectedBranch');
-    if (storedBranch) {
+    const urlParams = new URLSearchParams(window.location.search);
+    let activeBranch = urlParams.get('branch');
+    if (activeBranch !== 'jadukor' && activeBranch !== 'moveon') {
+      activeBranch = sessionStorage.getItem('selectedBranch');
+    }
+
+    if (activeBranch) {
       // Direct to Dashboard State
       if (gatewayScreen) {
         gatewayScreen.classList.add('hidden');
@@ -244,7 +249,7 @@ onAuthStateChanged(auth, async (user) => {
       if (appLayout) {
         appLayout.classList.remove('hidden');
       }
-      applyBranchSettings(storedBranch);
+      applyBranchSettings(activeBranch);
     } else {
       // Post-Login Gateway State
       if (gatewayScreen) {
@@ -259,6 +264,10 @@ onAuthStateChanged(auth, async (user) => {
     console.log("AuthObserver: Session cleared.");
     currentUser = null;
     sessionStorage.removeItem('selectedBranch'); // Clear selected branch on logout
+
+    // Clean URL parameter
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    window.history.pushState({ path: newUrl }, '', newUrl);
 
     // Hide both gateway and dashboard
     if (gatewayScreen) {
@@ -304,6 +313,7 @@ function updateUIElements() {
 // A. addTask(title, description, deadline, assignedTo)
 async function addTask(title, description, deadline, assignedTo, priority = 'medium', tags = 'General') {
   try {
+    const activeBranch = sessionStorage.getItem('selectedBranch') || 'moveon';
     await addDoc(collection(db, "tasks"), {
       title,
       description,
@@ -314,6 +324,7 @@ async function addTask(title, description, deadline, assignedTo, priority = 'med
       status: 'pending',
       completed: false,
       progressUpdates: [],
+      branch: activeBranch,
       createdAt: new Date().toISOString()
     });
     console.log("addTask: Successfully deployed to Firestore.");
@@ -355,7 +366,13 @@ let unsubscribeTasks = null;
 function loadTasks() {
   if (unsubscribeTasks) unsubscribeTasks();
 
-  const tasksQuery = collection(db, "tasks");
+  const activeBranch = sessionStorage.getItem('selectedBranch');
+  if (!activeBranch) {
+    console.log("loadTasks: No branch selected. Subscription suspended.");
+    return;
+  }
+
+  const tasksQuery = query(collection(db, "tasks"), where("branch", "==", activeBranch));
   unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
     tasks = [];
     snapshot.forEach(docSnap => {
@@ -372,7 +389,7 @@ function loadTasks() {
     } else if (activeTab === 'monthly-analytics') {
       renderMonthlyAnalytics();
     }
-    console.log("loadTasks: Grid synced with Firestore in real-time.");
+    console.log(`loadTasks: Grid synced with Firestore in real-time for branch: ${activeBranch}.`);
   }, (error) => {
     console.error("loadTasks Snapshot Error:", error.message);
   });
@@ -1267,6 +1284,13 @@ function applyBranchSettings(branch) {
   currentBranch = branch;
   sessionStorage.setItem('selectedBranch', branch);
 
+  // Sync active branch to URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('branch') !== branch) {
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?branch=' + branch;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+  }
+
   const agencyLogoImg = document.querySelector('.agency-logo');
   const gatewayScreen = document.getElementById('branch-gateway');
   const appLayout = document.querySelector('.app-layout');
@@ -1288,7 +1312,6 @@ function applyBranchSettings(branch) {
   // Fade out and hide gateway screen
   if (gatewayScreen) {
     gatewayScreen.classList.add('fade-out');
-    // Ensure display is set to none after transition completes
     setTimeout(() => {
       if (currentBranch === branch) {
         gatewayScreen.classList.add('hidden');
@@ -1299,6 +1322,29 @@ function applyBranchSettings(branch) {
   // Reveal the main dashboard
   if (appLayout) {
     appLayout.classList.remove('hidden');
+  }
+
+  // Load branch specific task database
+  loadTasks();
+}
+
+function showBranchGateway() {
+  const appLayout = document.querySelector('.app-layout');
+  const gatewayScreen = document.getElementById('branch-gateway');
+
+  currentBranch = null;
+  sessionStorage.removeItem('selectedBranch');
+
+  // Clean URL parameter
+  const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+  window.history.pushState({ path: newUrl }, '', newUrl);
+
+  if (appLayout) {
+    appLayout.classList.add('hidden');
+  }
+  if (gatewayScreen) {
+    gatewayScreen.classList.remove('hidden');
+    gatewayScreen.classList.remove('fade-out');
   }
 }
 
@@ -1315,6 +1361,15 @@ if (jadukorCard) {
 if (moveonCard) {
   moveonCard.addEventListener('click', () => {
     applyBranchSettings('moveon');
+  });
+}
+
+// Bind Switch Branch sidebar button
+const btnSwitchBranch = document.getElementById('nav-switch-branch');
+if (btnSwitchBranch) {
+  btnSwitchBranch.addEventListener('click', (e) => {
+    e.preventDefault();
+    showBranchGateway();
   });
 }
 
