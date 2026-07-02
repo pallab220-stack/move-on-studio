@@ -1,0 +1,26 @@
+{
+  "name": "move-on-studio",
+  "version": "1.0.0",
+  "description": "Move On Studio - Task Workspace Management System",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx http-server -p 3000",
+    "start": "npx http-server -p 3000",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "task-management",
+    "workspace",
+    "firebase",
+    "vercel-analytics"
+  ],
+  "author": "Move On Studio",
+  "license": "MIT",
+  "devDependencies": {
+    "@vercel/analytics": "^1.4.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
