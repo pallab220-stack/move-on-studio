@@ -334,6 +334,10 @@ async function addTask(title, description, deadline, assignedTo, priority = 'med
 
     if (extraData) {
       taskDoc.extraData = extraData;
+      if (extraData.category === 'shooting') {
+        taskDoc.photographer = extraData.photographer || '';
+        taskDoc.cinematographer = extraData.cinematographer || '';
+      }
     }
 
     await addDoc(collection(db, "tasks"), taskDoc);
@@ -582,9 +586,18 @@ function renderTaskGrid() {
   const userDisplayName = currentUser ? (currentUser.name || currentUser.email) : '';
 
   const filteredTasks = tasks.filter(task => {
-    // Role-based rendering: admin sees all tasks, standard users see only their assigned tasks
+    // Role-based rendering: admin sees all tasks, standard users see only their assigned tasks/roles
     const isAdmin = currentUser && currentUser.role === 'admin';
-    if (!isAdmin && task.assignee !== userDisplayName) return false;
+    if (!isAdmin) {
+      const isShooting = task.extraData && task.extraData.category === 'shooting';
+      if (isShooting) {
+        const isPhoto = task.photographer === userDisplayName;
+        const isCinema = task.cinematographer === userDisplayName;
+        if (!isPhoto && !isCinema) return false;
+      } else {
+        if (task.assignee !== userDisplayName) return false;
+      }
+    }
 
     if (activeFilter === 'pending' && task.status === 'completed') return false;
     if (activeFilter === 'completed' && task.status !== 'completed') return false;
@@ -596,7 +609,9 @@ function renderTaskGrid() {
       const matchAssignee = task.assignee.toLowerCase().includes(query);
       const matchTags = task.tags.toLowerCase().includes(query);
       const matchPriority = task.priority.toLowerCase().includes(query);
-      return matchTitle || matchDesc || matchAssignee || matchTags || matchPriority;
+      const matchPhoto = task.photographer && task.photographer.toLowerCase().includes(query);
+      const matchCinema = task.cinematographer && task.cinematographer.toLowerCase().includes(query);
+      return matchTitle || matchDesc || matchAssignee || matchTags || matchPriority || matchPhoto || matchCinema;
     }
 
     return true;
@@ -617,7 +632,35 @@ function renderTaskGrid() {
 
   filteredTasks.forEach(task => {
     const isOverdue = task.status !== 'completed' && new Date(task.date) < new Date('2026-07-02');
-    const initials = task.assignee.split(' ').map(name => name[0]).join('');
+    
+    // Fallback initials for assignee or photographer
+    const avatarName = task.assignee || task.photographer || 'U';
+    const initials = avatarName.split(' ').map(name => name[0]).join('');
+
+    // Determine user's specific role badge
+    let userRoleInTask = '';
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    const isShooting = task.extraData && task.extraData.category === 'shooting';
+
+    if (isAdmin) {
+      userRoleInTask = isShooting ? 'Admin (Shooting)' : 'Admin (Editing)';
+    } else {
+      if (isShooting) {
+        const isPhoto = task.photographer === userDisplayName;
+        const isCinema = task.cinematographer === userDisplayName;
+        if (isPhoto && isCinema) {
+          userRoleInTask = 'Photographer & Cinematographer';
+        } else if (isPhoto) {
+          userRoleInTask = 'Photographer';
+        } else if (isCinema) {
+          userRoleInTask = 'Cinematographer';
+        } else {
+          userRoleInTask = 'Operator';
+        }
+      } else {
+        userRoleInTask = 'Editor';
+      }
+    }
 
     const card = document.createElement('div');
     card.className = `task-card priority-${task.priority} ${task.status === 'completed' ? 'completed' : ''} ${task.status === 'updating' ? 'updating' : ''}`;
@@ -711,9 +754,10 @@ function renderTaskGrid() {
 
     card.innerHTML = `
       <div class="task-card-header">
-        <div class="task-meta-top">
+        <div class="task-meta-top" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <span class="task-classification">${task.tags.split(',')[0]}</span>
           ${badgeHtml}
+          <span class="role-badge" style="padding: 2px 8px; font-size: 0.65rem; font-weight: 600; border-radius: 4px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); text-transform: uppercase;">${userRoleInTask}</span>
         </div>
         <div class="task-actions">
           ${actionsHtml}
@@ -811,10 +855,17 @@ function updateDashboardStats(tasksList) {
   const userDisplayName = currentUser ? (currentUser.name || currentUser.email) : '';
   const isAdmin = currentUser && currentUser.role === 'admin';
 
-  // Role-based stats: admin calculates on all tasks, standard users calculate on their assigned tasks
+  // Role-based stats: admin calculates on all tasks, standard users calculate on their assigned tasks/roles
   const filteredList = isAdmin 
     ? tasksList 
-    : tasksList.filter(t => t.assignee === userDisplayName);
+    : tasksList.filter(t => {
+        const isShooting = t.extraData && t.extraData.category === 'shooting';
+        if (isShooting) {
+          return t.photographer === userDisplayName || t.cinematographer === userDisplayName;
+        } else {
+          return t.assignee === userDisplayName;
+        }
+      });
 
   const pendingCount = filteredList.filter(t => t.status === 'pending' || t.status === 'updating').length;
   const completedCount = filteredList.filter(t => t.status === 'completed').length;
