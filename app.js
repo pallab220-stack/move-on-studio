@@ -213,7 +213,7 @@ async function checkUserRole(uid) {
   }
 
   renderTaskGrid();
-  updateStats();
+  updateDashboardStats(tasks);
 }
 
 // E. Live Auth Observer (Tied to real Firebase Authentication State)
@@ -235,7 +235,7 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = null;
     updateUIElements();
     renderTaskGrid();
-    updateStats();
+    updateDashboardStats(tasks);
     openModal();
   }
 });
@@ -331,7 +331,7 @@ function loadTasks() {
 
     if (activeTab === 'my-workspace') {
       renderTaskGrid();
-      updateStats();
+      updateDashboardStats(tasks);
     } else if (activeTab === 'team-workload') {
       renderTeamWorkload();
     } else if (activeTab === 'monthly-analytics') {
@@ -703,14 +703,10 @@ function renderTaskGrid() {
   });
 }
 
-function updateStats() {
-  // Filter tasks assigned to current user (isolated workspace)
-  const userDisplayName = currentUser ? (currentUser.name || currentUser.email) : '';
-  const myTasks = tasks.filter(t => t.assignee === userDisplayName);
-
-  const pendingCount = myTasks.filter(t => t.status === 'pending' || t.status === 'updating').length;
-  const completedCount = myTasks.filter(t => t.status === 'completed').length;
-  const totalCount = myTasks.length;
+function updateDashboardStats(tasksList) {
+  const pendingCount = tasksList.filter(t => t.status === 'pending' || t.status === 'updating').length;
+  const completedCount = tasksList.filter(t => t.status === 'completed').length;
+  const totalCount = tasksList.length;
 
   pendingBadgeCount.textContent = pendingCount;
   statsPendingCount.textContent = pendingCount;
@@ -722,8 +718,8 @@ function updateStats() {
   const pendingPercent = Math.round((pendingCount / totalWeight) * 100);
   const completedPercent = Math.round((completedCount / totalWeight) * 100);
 
-  pendingProgressBar.style.width = `${pendingPercent}%`;
-  completedProgressBar.style.width = `${completedPercent}%`;
+  if (pendingProgressBar) pendingProgressBar.style.width = `${pendingPercent}%`;
+  if (completedProgressBar) completedProgressBar.style.width = `${completedPercent}%`;
 
   const velocity = Math.round((completedCount / totalWeight) * 100);
   statsVelocityValue.textContent = `${velocity}%`;
@@ -862,7 +858,7 @@ function switchTab(tabId) {
   // Run tab-specific rendering logic
   if (tabId === 'my-workspace') {
     renderTaskGrid();
-    updateStats();
+    updateDashboardStats(tasks);
   } else if (tabId === 'team-workload') {
     renderTeamWorkload();
   } else if (tabId === 'monthly-analytics') {
