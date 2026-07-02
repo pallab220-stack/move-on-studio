@@ -1638,7 +1638,10 @@ window.addEventListener('popstate', (e) => {
 });
 
 // 12. TASK DETAILS MODAL INTERACTION
+let activeDetailsTask = null;
+
 function openDetailsModal(task) {
+  activeDetailsTask = task;
   const modal = document.getElementById('task-details-modal');
   const title = document.getElementById('details-title');
   const branchTag = document.getElementById('details-branch-tag');
@@ -1714,6 +1717,46 @@ function openDetailsModal(task) {
     if (tag) tag.textContent = task.tags || '-';
   }
 
+  // Load Progress and Deliverables values
+  const shootSec = document.getElementById('shooting-progress-section');
+  const editSec = document.getElementById('editing-progress-section');
+
+  if (shootSec && editSec) {
+    if (hasExtra) {
+      shootSec.style.display = 'flex';
+      editSec.style.display = 'none';
+
+      // Load shooting progress
+      const chkShootCompleted = document.getElementById('chk-shoot-completed');
+      const txtShootNotes = document.getElementById('txt-shoot-notes');
+      
+      if (chkShootCompleted) {
+        chkShootCompleted.checked = !!(task.progressData && task.progressData.shootCompleted);
+      }
+      if (txtShootNotes) {
+        txtShootNotes.value = (task.progressData && task.progressData.shootNotes) || '';
+      }
+    } else {
+      shootSec.style.display = 'none';
+      editSec.style.display = 'flex';
+
+      // Load editing progress
+      const chkRoughCut = document.getElementById('chk-rough-cut');
+      const txtRoughCutLink = document.getElementById('txt-rough-cut-link');
+      const chkColorGrading = document.getElementById('chk-color-grading');
+      const txtColorGradingLink = document.getElementById('txt-color-grading-link');
+      const chkFinalPreview = document.getElementById('chk-final-preview');
+      const txtFinalPreviewLink = document.getElementById('txt-final-preview-link');
+
+      if (chkRoughCut) chkRoughCut.checked = !!(task.progressData && task.progressData.roughCut);
+      if (txtRoughCutLink) txtRoughCutLink.value = (task.progressData && task.progressData.roughCutLink) || '';
+      if (chkColorGrading) chkColorGrading.checked = !!(task.progressData && task.progressData.colorGrading);
+      if (txtColorGradingLink) txtColorGradingLink.value = (task.progressData && task.progressData.colorGradingLink) || '';
+      if (chkFinalPreview) chkFinalPreview.checked = !!(task.progressData && task.progressData.finalPreview);
+      if (txtFinalPreviewLink) txtFinalPreviewLink.value = (task.progressData && task.progressData.finalPreviewLink) || '';
+    }
+  }
+
   // Open overlay
   modal.style.opacity = '1';
   modal.style.visibility = 'visible';
@@ -1722,6 +1765,7 @@ function openDetailsModal(task) {
 
 const detailsModal = document.getElementById('task-details-modal');
 const btnCloseDetails = document.getElementById('btn-close-details');
+const btnSaveProgress = document.getElementById('btn-save-progress');
 
 function closeDetailsModal() {
   if (detailsModal) {
@@ -1739,6 +1783,51 @@ if (detailsModal) {
   detailsModal.addEventListener('click', (e) => {
     if (e.target === detailsModal) {
       closeDetailsModal();
+    }
+  });
+}
+
+if (btnSaveProgress) {
+  btnSaveProgress.addEventListener('click', async () => {
+    if (!activeDetailsTask) return;
+
+    const isShooting = activeDetailsTask.extraData && activeDetailsTask.extraData.category === 'shooting';
+    let newProgressData = {};
+
+    try {
+      if (isShooting) {
+        const shootCompleted = document.getElementById('chk-shoot-completed').checked;
+        const shootNotes = document.getElementById('txt-shoot-notes').value.trim();
+        newProgressData = {
+          category: 'shooting',
+          shootCompleted,
+          shootNotes
+        };
+      } else {
+        const roughCut = document.getElementById('chk-rough-cut').checked;
+        const roughCutLink = document.getElementById('txt-rough-cut-link').value.trim();
+        const colorGrading = document.getElementById('chk-color-grading').checked;
+        const colorGradingLink = document.getElementById('txt-color-grading-link').value.trim();
+        const finalPreview = document.getElementById('chk-final-preview').checked;
+        const finalPreviewLink = document.getElementById('txt-final-preview-link').value.trim();
+        
+        newProgressData = {
+          category: 'editing',
+          roughCut,
+          roughCutLink,
+          colorGrading,
+          colorGradingLink,
+          finalPreview,
+          finalPreviewLink
+        };
+      }
+
+      await updateDoc(doc(db, "tasks", activeDetailsTask.id), { progressData: newProgressData });
+      activeDetailsTask.progressData = newProgressData; // update local cached task details reference
+      alert("Progress Saved Successfully!");
+    } catch (error) {
+      console.error("Error saving task progress data:", error);
+      alert("Error saving progress: " + error.message);
     }
   });
 }

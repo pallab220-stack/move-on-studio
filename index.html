@@ -278,7 +278,7 @@
                       <option value="DaVinci Resolve Color Grading">DaVinci Resolve Color Grading</option>
                       <option value="CapCut Short-Form Edit">CapCut Short-Form Edit</option>
                       <option value="Audio Sync & Sound Design">Audio Sync & Sound Design</option>
-                      <option value="Cinematic / 90s Aesthetic Styling">Cinematic / 90s Aesthetic Styling</option>
+                      <option value="Cinematic">Cinematic</option>
                       <option value="Client Revisions">Client Revisions</option>
                       <option value="Final Render & Delivery">Final Render & Delivery</option>
                     </select>
@@ -572,6 +572,59 @@
           <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Objectives & Details</span>
           <div id="details-description" style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; white-space: pre-wrap;">-</div>
         </div>
+      </div>
+
+      <!-- Task Progress & Deliverables Container -->
+      <div id="details-progress-container" style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
+        <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; margin-bottom: 16px; letter-spacing: 0.5px;">Task Progress & Deliverables</h4>
+        
+        <!-- Shooting Progress Section -->
+        <div id="shooting-progress-section" style="display: none; flex-direction: column; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-primary); margin: 0;">
+            <input type="checkbox" id="chk-shoot-completed" style="accent-color: var(--accent-green); width: 16px; height: 16px;">
+            Mark Shoot as Completed
+          </label>
+          <div class="form-group" style="margin-top: 4px;">
+            <label for="txt-shoot-notes" style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Shoot Notes / Review</label>
+            <textarea id="txt-shoot-notes" rows="2" placeholder="e.g., Shoot completed successfully. Raw footage uploaded." style="width: 100%; margin-top: 4px;"></textarea>
+          </div>
+        </div>
+
+        <!-- Editing Progress Section -->
+        <div id="editing-progress-section" style="display: none; flex-direction: column; gap: 16px;">
+          <!-- Level 1 -->
+          <div style="display: grid; grid-template-columns: 180px 1fr; gap: 12px; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.82rem; color: var(--text-primary); margin: 0;">
+              <input type="checkbox" id="chk-rough-cut" style="accent-color: var(--accent-green); width: 14px; height: 14px;">
+              Rough Cut Done
+            </label>
+            <input type="text" id="txt-rough-cut-link" placeholder="Video Link (Frame.io / Drive)" style="padding: 6px 10px; font-size: 0.8rem; height: 32px; background: var(--bg-pure); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); outline: none;">
+          </div>
+          
+          <!-- Level 2 -->
+          <div style="display: grid; grid-template-columns: 180px 1fr; gap: 12px; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.82rem; color: var(--text-primary); margin: 0;">
+              <input type="checkbox" id="chk-color-grading" style="accent-color: var(--accent-green); width: 14px; height: 14px;">
+              Color Grading Done
+            </label>
+            <input type="text" id="txt-color-grading-link" placeholder="Video Link (Frame.io / Drive)" style="padding: 6px 10px; font-size: 0.8rem; height: 32px; background: var(--bg-pure); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); outline: none;">
+          </div>
+
+          <!-- Level 3 -->
+          <div style="display: grid; grid-template-columns: 180px 1fr; gap: 12px; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.82rem; color: var(--text-primary); margin: 0;">
+              <input type="checkbox" id="chk-final-preview" style="accent-color: var(--accent-green); width: 14px; height: 14px;">
+              Final Preview Ready
+            </label>
+            <input type="text" id="txt-final-preview-link" placeholder="Video Link (YouTube / Drive)" style="padding: 6px 10px; font-size: 0.8rem; height: 32px; background: var(--bg-pure); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); outline: none;">
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <button class="btn btn-primary" id="btn-save-progress" style="margin-top: 20px; width: 100%; height: 38px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Save Progress
+        </button>
       </div>
     </div>
   </div>
