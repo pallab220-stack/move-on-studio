@@ -250,6 +250,10 @@ onAuthStateChanged(auth, async (user) => {
         appLayout.classList.remove('hidden');
       }
       applyBranchSettings(activeBranch);
+
+      // On initial load, activate the correct tab
+      const tabParam = urlParams.get('tab') || 'my-workspace';
+      switchTab(tabParam, false);
     } else {
       // Post-Login Gateway State
       if (gatewayScreen) {
@@ -311,10 +315,10 @@ function updateUIElements() {
 // 5. FIRESTORE REAL-TIME TASK ACTIONS
 
 // A. addTask(title, description, deadline, assignedTo)
-async function addTask(title, description, deadline, assignedTo, priority = 'medium', tags = 'General') {
+async function addTask(title, description, deadline, assignedTo, priority = 'medium', tags = 'General', extraData = null) {
   try {
     const activeBranch = sessionStorage.getItem('selectedBranch') || 'moveon';
-    await addDoc(collection(db, "tasks"), {
+    const taskDoc = {
       title,
       description,
       date: deadline,
@@ -326,7 +330,13 @@ async function addTask(title, description, deadline, assignedTo, priority = 'med
       progressUpdates: [],
       branch: activeBranch,
       createdAt: new Date().toISOString()
-    });
+    };
+
+    if (extraData) {
+      taskDoc.extraData = extraData;
+    }
+
+    await addDoc(collection(db, "tasks"), taskDoc);
     console.log("addTask: Successfully deployed to Firestore.");
 
     // Fetch assignee's FCM token from 'users' collection (check both name and email matching)
@@ -852,11 +862,6 @@ authForm.addEventListener('submit', (e) => {
 addTaskForm.addEventListener('submit', (e) => {
   e.preventDefault();
 
-  if (!currentUser || currentUser.role !== 'admin') {
-    alert("Authorization Error: Admin credentials required.");
-    return;
-  }
-
   const title = document.getElementById('task-title').value.trim();
   const description = document.getElementById('task-description').value.trim();
   const date = document.getElementById('task-date').value;
@@ -866,8 +871,27 @@ addTaskForm.addEventListener('submit', (e) => {
 
   if (!title || !date || !description) return;
 
-  addTask(title, description, date, assignee, priority, tags);
+  const activeBranch = sessionStorage.getItem('selectedBranch');
+  let extraData = null;
+
+  if (activeBranch === 'jadukor') {
+    const category = document.getElementById('task-category').value;
+    if (category === 'shooting') {
+      extraData = {
+        category: 'shooting',
+        shootDate: document.getElementById('shoot-date').value || '',
+        shootTime: document.getElementById('shoot-time').value || '',
+        photographer: document.getElementById('shoot-photographer').value || '',
+        cinematographer: document.getElementById('shoot-cinematographer').value || ''
+      };
+    } else {
+      extraData = { category: 'editing' };
+    }
+  }
+
+  addTask(title, description, date, assignee, priority, tags, extraData);
   addTaskForm.reset();
+  adjustDynamicFormForBranch();
 
   document.querySelector('.task-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
@@ -905,7 +929,7 @@ tabButtons.forEach(btn => {
 
 // Tab selection state and helpers
 
-function switchTab(tabId) {
+function switchTab(tabId, updateUrl = true) {
   activeTab = tabId;
 
   // Toggle active class on sidebar menu items
@@ -934,6 +958,12 @@ function switchTab(tabId) {
     renderTeamWorkload();
   } else if (tabId === 'monthly-analytics') {
     renderMonthlyAnalytics();
+  }
+
+  if (updateUrl) {
+    const activeBranch = sessionStorage.getItem('selectedBranch') || 'moveon';
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?branch=${activeBranch}&tab=${tabId}`;
+    window.history.pushState({ tab: tabId, branch: activeBranch }, '', newUrl);
   }
 }
 
@@ -1286,9 +1316,10 @@ function applyBranchSettings(branch) {
 
   // Sync active branch to URL parameters
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('branch') !== branch) {
-    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?branch=' + branch;
-    window.history.pushState({ path: newUrl }, '', newUrl);
+  const tabParam = urlParams.get('tab') || activeTab || 'my-workspace';
+  if (urlParams.get('branch') !== branch || urlParams.get('tab') !== tabParam) {
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?branch=${branch}&tab=${tabParam}`;
+    window.history.pushState({ path: newUrl, tab: tabParam, branch: branch }, '', newUrl);
   }
 
   const agencyLogoImg = document.querySelector('.agency-logo');
@@ -1324,6 +1355,9 @@ function applyBranchSettings(branch) {
     appLayout.classList.remove('hidden');
   }
 
+  // Update category and details visibility for task form
+  adjustDynamicFormForBranch();
+
   // Load branch specific task database
   loadTasks();
 }
@@ -1345,6 +1379,38 @@ function showBranchGateway() {
   if (gatewayScreen) {
     gatewayScreen.classList.remove('hidden');
     gatewayScreen.classList.remove('fade-out');
+  }
+}
+
+function adjustDynamicFormForBranch() {
+  const activeBranch = sessionStorage.getItem('selectedBranch');
+  const catGroup = document.getElementById('task-category-group');
+  const detailsContainer = document.getElementById('shooting-details-container');
+  const taskCategorySelect = document.getElementById('task-category');
+
+  if (!catGroup || !detailsContainer) return;
+
+  if (activeBranch === 'jadukor') {
+    catGroup.classList.remove('hidden');
+    if (taskCategorySelect && taskCategorySelect.value === 'shooting') {
+      detailsContainer.classList.remove('hidden');
+    } else {
+      detailsContainer.classList.add('hidden');
+    }
+  } else {
+    catGroup.classList.add('hidden');
+    detailsContainer.classList.add('hidden');
+    if (taskCategorySelect) {
+      taskCategorySelect.value = 'editing';
+    }
+    const shootDate = document.getElementById('shoot-date');
+    const shootTime = document.getElementById('shoot-time');
+    const photographer = document.getElementById('shoot-photographer');
+    const cinematographer = document.getElementById('shoot-cinematographer');
+    if (shootDate) shootDate.value = '';
+    if (shootTime) shootTime.value = '';
+    if (photographer) photographer.value = '';
+    if (cinematographer) cinematographer.value = '';
   }
 }
 
@@ -1372,6 +1438,34 @@ if (btnSwitchBranch) {
     showBranchGateway();
   });
 }
+
+// Bind change listener on category dropdown
+const taskCategorySelect = document.getElementById('task-category');
+if (taskCategorySelect) {
+  taskCategorySelect.addEventListener('change', (e) => {
+    const detailsContainer = document.getElementById('shooting-details-container');
+    if (detailsContainer) {
+      if (e.target.value === 'shooting') {
+        detailsContainer.classList.remove('hidden');
+      } else {
+        detailsContainer.classList.add('hidden');
+      }
+    }
+  });
+}
+
+// Back/Forward native browser navigation support
+window.addEventListener('popstate', (e) => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab') || 'my-workspace';
+  const branchParam = urlParams.get('branch');
+
+  if (branchParam && branchParam !== currentBranch) {
+    applyBranchSettings(branchParam);
+  }
+
+  switchTab(tabParam, false);
+});
 
 // Initial Boot setup
 setupSystemBanner();

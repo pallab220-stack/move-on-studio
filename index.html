@@ -257,6 +257,47 @@
                   </select>
                 </div>
 
+                <!-- Jadukor Branch Fields: Task Category Selection -->
+                <div class="form-group col-span-2 hidden" id="task-category-group">
+                  <label for="task-category">Task Category</label>
+                  <select id="task-category" class="custom-select">
+                    <option value="editing" selected>Editing Operation</option>
+                    <option value="shooting">Shooting Operation</option>
+                  </select>
+                </div>
+
+                <!-- Shooting Details Container (Hidden by default) -->
+                <div class="form-group col-span-2 hidden" id="shooting-details-container">
+                  <div class="form-grid" style="margin-top: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%;">
+                    <div class="form-group">
+                      <label for="shoot-date">Shoot Date</label>
+                      <input type="date" id="shoot-date">
+                    </div>
+                    <div class="form-group">
+                      <label for="shoot-time">Shoot Time</label>
+                      <input type="time" id="shoot-time">
+                    </div>
+                    <div class="form-group">
+                      <label for="shoot-photographer">Photographer</label>
+                      <select id="shoot-photographer" class="custom-select">
+                        <option value="">-- Select Photographer --</option>
+                        <option value="Alex Mercer">Alex Mercer</option>
+                        <option value="Sarah Connor">Sarah Connor</option>
+                        <option value="John Doe">John Doe</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="shoot-cinematographer">Cinematographer</label>
+                      <select id="shoot-cinematographer" class="custom-select">
+                        <option value="">-- Select Cinematographer --</option>
+                        <option value="Jane Foster">Jane Foster</option>
+                        <option value="Marcus Aurelius">Marcus Aurelius</option>
+                        <option value="Kyle Reese">Kyle Reese</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="form-group col-span-2">
                   <label for="task-description">Operation Objectives / Details</label>
                   <textarea id="task-description" rows="3" required placeholder="Describe task scope, technical deliverables, and core operational success criteria..."></textarea>
