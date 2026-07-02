@@ -696,7 +696,6 @@ function renderTaskGrid() {
 
     // Editor UI: Form is only visible to the assigned editor/user
     const isAssignedEditor = currentUser && currentUser.role === 'user' && task.assignee === currentUser.name;
-    const isAdmin = currentUser && currentUser.role === 'admin';
 
     if (hasUpdates || isAssignedEditor) {
       updatesSectionHtml = `
