@@ -875,14 +875,18 @@ addTaskForm.addEventListener('submit', (e) => {
   let extraData = null;
 
   if (activeBranch === 'jadukor') {
-    const category = document.getElementById('task-category').value;
+    const activeCard = document.querySelector('.category-select-card.active');
+    const category = activeCard ? activeCard.getAttribute('data-category') : 'editing';
     if (category === 'shooting') {
       extraData = {
         category: 'shooting',
         shootDate: document.getElementById('shoot-date').value || '',
         shootTime: document.getElementById('shoot-time').value || '',
         photographer: document.getElementById('shoot-photographer').value || '',
-        cinematographer: document.getElementById('shoot-cinematographer').value || ''
+        cinematographer: document.getElementById('shoot-cinematographer').value || '',
+        clientName: document.getElementById('client-name').value.trim() || '',
+        clientPhone: document.getElementById('client-phone').value.trim() || '',
+        shootPlace: document.getElementById('shoot-place').value.trim() || ''
       };
     } else {
       extraData = { category: 'editing' };
@@ -1386,31 +1390,48 @@ function adjustDynamicFormForBranch() {
   const activeBranch = sessionStorage.getItem('selectedBranch');
   const catGroup = document.getElementById('task-category-group');
   const detailsContainer = document.getElementById('shooting-details-container');
-  const taskCategorySelect = document.getElementById('task-category');
 
   if (!catGroup || !detailsContainer) return;
 
   if (activeBranch === 'jadukor') {
     catGroup.classList.remove('hidden');
-    if (taskCategorySelect && taskCategorySelect.value === 'shooting') {
+    
+    // Check which card is currently active
+    const activeCard = document.querySelector('.category-select-card.active');
+    const category = activeCard ? activeCard.getAttribute('data-category') : 'editing';
+    
+    if (category === 'shooting') {
       detailsContainer.classList.remove('hidden');
     } else {
       detailsContainer.classList.add('hidden');
     }
   } else {
+    // Reset and hide
     catGroup.classList.add('hidden');
     detailsContainer.classList.add('hidden');
-    if (taskCategorySelect) {
-      taskCategorySelect.value = 'editing';
-    }
+    
+    // Set active card back to editing
+    const editingCard = document.getElementById('cat-card-editing');
+    const shootingCard = document.getElementById('cat-card-shooting');
+    if (editingCard) editingCard.classList.add('active');
+    if (shootingCard) shootingCard.classList.remove('active');
+
+    // Reset input fields
     const shootDate = document.getElementById('shoot-date');
     const shootTime = document.getElementById('shoot-time');
     const photographer = document.getElementById('shoot-photographer');
     const cinematographer = document.getElementById('shoot-cinematographer');
+    const clientName = document.getElementById('client-name');
+    const clientPhone = document.getElementById('client-phone');
+    const shootPlace = document.getElementById('shoot-place');
+
     if (shootDate) shootDate.value = '';
     if (shootTime) shootTime.value = '';
     if (photographer) photographer.value = '';
     if (cinematographer) cinematographer.value = '';
+    if (clientName) clientName.value = '';
+    if (clientPhone) clientPhone.value = '';
+    if (shootPlace) shootPlace.value = '';
   }
 }
 
@@ -1439,17 +1460,25 @@ if (btnSwitchBranch) {
   });
 }
 
-// Bind change listener on category dropdown
-const taskCategorySelect = document.getElementById('task-category');
-if (taskCategorySelect) {
-  taskCategorySelect.addEventListener('change', (e) => {
-    const detailsContainer = document.getElementById('shooting-details-container');
-    if (detailsContainer) {
-      if (e.target.value === 'shooting') {
-        detailsContainer.classList.remove('hidden');
-      } else {
-        detailsContainer.classList.add('hidden');
-      }
+// Bind click listeners for category select cards
+const catCardEditing = document.getElementById('cat-card-editing');
+const catCardShooting = document.getElementById('cat-card-shooting');
+const shootingDetailsContainer = document.getElementById('shooting-details-container');
+
+if (catCardEditing && catCardShooting) {
+  catCardEditing.addEventListener('click', () => {
+    catCardEditing.classList.add('active');
+    catCardShooting.classList.remove('active');
+    if (shootingDetailsContainer) {
+      shootingDetailsContainer.classList.add('hidden');
+    }
+  });
+
+  catCardShooting.addEventListener('click', () => {
+    catCardShooting.classList.add('active');
+    catCardEditing.classList.remove('active');
+    if (shootingDetailsContainer) {
+      shootingDetailsContainer.classList.remove('hidden');
     }
   });
 }

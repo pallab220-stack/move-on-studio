@@ -1970,4 +1970,76 @@ body {
   display: none !important;
 }
 
+/* 11. TASK CATEGORY SELECT CARDS */
+.category-cards-wrapper {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.category-select-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  user-select: none;
+}
+
+.category-select-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.category-select-card.active {
+  background: rgba(16, 185, 129, 0.04);
+  border-color: var(--accent-green);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+}
+
+.category-select-card .card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.3s;
+}
+
+.category-select-card.active .card-icon {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent-green);
+}
+
+.category-select-card .card-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.category-select-card .card-text h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+  transition: color 0.3s;
+}
+
+.category-select-card.active .card-text h4 {
+  color: var(--accent-green);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.category-select-card .card-text p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 

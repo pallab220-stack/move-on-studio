@@ -259,11 +259,27 @@
 
                 <!-- Jadukor Branch Fields: Task Category Selection -->
                 <div class="form-group col-span-2 hidden" id="task-category-group">
-                  <label for="task-category">Task Category</label>
-                  <select id="task-category" class="custom-select">
-                    <option value="editing" selected>Editing Operation</option>
-                    <option value="shooting">Shooting Operation</option>
-                  </select>
+                  <label>Operation Category</label>
+                  <div class="category-cards-wrapper">
+                    <div class="category-select-card active" data-category="editing" id="cat-card-editing">
+                      <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                      </div>
+                      <div class="card-text">
+                        <h4>Editing Operation</h4>
+                        <p>Post-production, grading & assembly</p>
+                      </div>
+                    </div>
+                    <div class="category-select-card" data-category="shooting" id="cat-card-shooting">
+                      <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                      </div>
+                      <div class="card-text">
+                        <h4>Shooting Operation</h4>
+                        <p>On-site photo/video capture details</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Shooting Details Container (Hidden by default) -->
@@ -294,6 +310,19 @@
                         <option value="Marcus Aurelius">Marcus Aurelius</option>
                         <option value="Kyle Reese">Kyle Reese</option>
                       </select>
+                    </div>
+                    <!-- New Client & Location Fields -->
+                    <div class="form-group">
+                      <label for="client-name">Client Name</label>
+                      <input type="text" id="client-name" placeholder="e.g., Emily Watson">
+                    </div>
+                    <div class="form-group">
+                      <label for="client-phone">Client Phone Number</label>
+                      <input type="tel" id="client-phone" placeholder="e.g., +123456789">
+                    </div>
+                    <div class="form-group col-span-2">
+                      <label for="shoot-place">Shoot Place / Location</label>
+                      <input type="text" id="shoot-place" placeholder="e.g., Central Park Plaza, NY">
                     </div>
                   </div>
                 </div>
