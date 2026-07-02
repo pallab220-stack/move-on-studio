@@ -112,6 +112,15 @@ updateClock();
 // A. User Signup (Email & Password)
 async function registerNewAgent(email, password, displayName) {
   try {
+    const inviteCodeInput = document.getElementById('invite-code');
+    const inviteCode = inviteCodeInput ? inviteCodeInput.value.trim() : '';
+
+    if (inviteCode !== "MOVEON2026") {
+      const errorMsg = "Access Denied: Invalid Agency Code";
+      alert(errorMsg);
+      throw new Error(errorMsg);
+    }
+
     // Enforces actual Firebase Auth method for signup
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
