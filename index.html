@@ -485,6 +485,97 @@
     </div>
   </div>
 
+  <!-- 4. TASK DETAILS MODAL OVERLAY -->
+  <div class="modal-overlay" id="task-details-modal" style="opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.3s ease, visibility 0.3s ease;">
+    <div class="modal-content glassmorphism" style="max-width: 600px; width: 100%;">
+      <button class="btn-close" id="btn-close-details" aria-label="Close modal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
+        <div class="header-indicator">
+          <span class="indicator-pulse green" id="details-status-pulse"></span>
+          <h3 id="details-title" style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); text-transform: none; letter-spacing: 0.5px;">Operation Details</h3>
+        </div>
+        <p class="modal-subtitle" id="details-branch-tag" style="font-family: monospace; font-size: 0.75rem; color: var(--accent-green); margin-top: 4px;">BRANCH // MOVEON</p>
+      </div>
+
+      <div class="details-grid" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        <!-- Category -->
+        <div class="details-row" id="row-details-category" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Category</span>
+          <span id="details-category" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">Editing Operation</span>
+        </div>
+        
+        <!-- Priority -->
+        <div class="details-row" id="row-details-priority" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Priority</span>
+          <span id="details-priority" class="badge">MEDIUM</span>
+        </div>
+
+        <!-- Deadline -->
+        <div class="details-row" id="row-details-date" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Deadline</span>
+          <span id="details-date" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Assigned Officer -->
+        <div class="details-row" id="row-details-assignee" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Assigned To</span>
+          <span id="details-assignee" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Classification Tag -->
+        <div class="details-row" id="row-details-tag" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Classification</span>
+          <span id="details-tag" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Client Name -->
+        <div class="details-row" id="row-details-client-name" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Client Name</span>
+          <span id="details-client-name" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Client Phone -->
+        <div class="details-row" id="row-details-client-phone" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Client Contact</span>
+          <span id="details-client-phone" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Location -->
+        <div class="details-row" id="row-details-place" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Location</span>
+          <span id="details-place" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Shoot Date & Time -->
+        <div class="details-row" id="row-details-shoot-time" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Shoot Schedule</span>
+          <span id="details-shoot-time" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Photographer -->
+        <div class="details-row" id="row-details-photographer" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Photographer</span>
+          <span id="details-photographer" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Cinematographer -->
+        <div class="details-row" id="row-details-cinematographer" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Cinematographer</span>
+          <span id="details-cinematographer" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 550;">-</span>
+        </div>
+
+        <!-- Special Instructions / Objectives -->
+        <div class="details-row" id="row-details-description" style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Objectives & Details</span>
+          <div id="details-description" style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; white-space: pre-wrap;">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>

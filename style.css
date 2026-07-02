@@ -708,6 +708,8 @@ body {
 
 .form-group input[type="text"],
 .form-group input[type="date"],
+.form-group input[type="time"],
+.form-group input[type="tel"],
 .form-group input[type="email"],
 .form-group input[type="password"],
 .form-group textarea {
@@ -720,6 +722,7 @@ body {
   font-size: 0.85rem;
   outline: none;
   transition: var(--transition-fast);
+  color-scheme: dark;
 }
 
 .form-group input:hover,

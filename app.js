@@ -795,6 +795,14 @@ function renderTaskGrid() {
       }
     }
 
+    card.addEventListener('click', (e) => {
+      // Ignore clicks on interactive child controls
+      if (e.target.closest('button') || e.target.closest('input') || e.target.closest('.timeline-title') || e.target.closest('.updates-list') || e.target.closest('.add-update-form')) {
+        return;
+      }
+      openDetailsModal(task);
+    });
+
     taskGridContainer.appendChild(card);
   });
 }
@@ -1578,6 +1586,112 @@ window.addEventListener('popstate', (e) => {
 
   switchTab(tabParam, false);
 });
+
+// 12. TASK DETAILS MODAL INTERACTION
+function openDetailsModal(task) {
+  const modal = document.getElementById('task-details-modal');
+  const title = document.getElementById('details-title');
+  const branchTag = document.getElementById('details-branch-tag');
+  const category = document.getElementById('details-category');
+  const priority = document.getElementById('details-priority');
+  const date = document.getElementById('details-date');
+  const assignee = document.getElementById('details-assignee');
+  const tag = document.getElementById('details-tag');
+  const clientName = document.getElementById('details-client-name');
+  const clientPhone = document.getElementById('details-client-phone');
+  const place = document.getElementById('details-place');
+  const shootTime = document.getElementById('details-shoot-time');
+  const photographer = document.getElementById('details-photographer');
+  const cinematographer = document.getElementById('details-cinematographer');
+  const description = document.getElementById('details-description');
+  const statusPulse = document.getElementById('details-status-pulse');
+
+  if (!modal) return;
+
+  // Pulse color indicator
+  if (statusPulse) {
+    statusPulse.className = 'indicator-pulse ' + (task.status === 'completed' ? 'blue' : (task.status === 'updating' ? 'orange' : 'green'));
+  }
+
+  if (title) title.textContent = task.title;
+  if (branchTag) branchTag.textContent = 'BRANCH // ' + (task.branch ? task.branch.toUpperCase() : 'MOVEON');
+  
+  if (priority) {
+    priority.textContent = (task.priority || 'medium').toUpperCase();
+    priority.className = 'badge badge-' + (task.priority || 'medium');
+  }
+  
+  if (date) date.textContent = task.date || '-';
+  if (assignee) assignee.textContent = task.assignee || 'Unassigned';
+  if (description) description.textContent = task.description || 'No objectives provided.';
+
+  // Render extraData branch category fields
+  const clientRow = document.getElementById('row-details-client-name');
+  const phoneRow = document.getElementById('row-details-client-phone');
+  const placeRow = document.getElementById('row-details-place');
+  const shootTimeRow = document.getElementById('row-details-shoot-time');
+  const photoRow = document.getElementById('row-details-photographer');
+  const cinemaRow = document.getElementById('row-details-cinematographer');
+  const tagRow = document.getElementById('row-details-tag');
+
+  const hasExtra = task.extraData && task.extraData.category === 'shooting';
+
+  if (hasExtra) {
+    if (category) category.textContent = "Shooting Operation";
+    if (clientRow) clientRow.style.display = 'flex';
+    if (phoneRow) phoneRow.style.display = 'flex';
+    if (placeRow) placeRow.style.display = 'flex';
+    if (shootTimeRow) shootTimeRow.style.display = 'flex';
+    if (photoRow) photoRow.style.display = 'flex';
+    if (cinemaRow) cinemaRow.style.display = 'flex';
+    if (tagRow) tagRow.style.display = 'none';
+
+    if (clientName) clientName.textContent = task.extraData.clientName || '-';
+    if (clientPhone) clientPhone.textContent = task.extraData.clientPhone || '-';
+    if (place) place.textContent = task.extraData.shootPlace || '-';
+    if (shootTime) shootTime.textContent = (task.extraData.shootDate || '') + ' @ ' + (task.extraData.shootTime || 'TBD');
+    if (photographer) photographer.textContent = task.extraData.photographer || 'Unassigned';
+    if (cinematographer) cinematographer.textContent = task.extraData.cinematographer || 'Unassigned';
+  } else {
+    if (category) category.textContent = "Editing Operation";
+    if (clientRow) clientRow.style.display = 'none';
+    if (phoneRow) phoneRow.style.display = 'none';
+    if (placeRow) placeRow.style.display = 'none';
+    if (shootTimeRow) shootTimeRow.style.display = 'none';
+    if (photoRow) photoRow.style.display = 'none';
+    if (cinemaRow) cinemaRow.style.display = 'none';
+    if (tagRow) tagRow.style.display = 'flex';
+    if (tag) tag.textContent = task.tags || '-';
+  }
+
+  // Open overlay
+  modal.style.opacity = '1';
+  modal.style.visibility = 'visible';
+  modal.style.pointerEvents = 'auto';
+}
+
+const detailsModal = document.getElementById('task-details-modal');
+const btnCloseDetails = document.getElementById('btn-close-details');
+
+function closeDetailsModal() {
+  if (detailsModal) {
+    detailsModal.style.opacity = '0';
+    detailsModal.style.visibility = 'hidden';
+    detailsModal.style.pointerEvents = 'none';
+  }
+}
+
+if (btnCloseDetails) {
+  btnCloseDetails.addEventListener('click', closeDetailsModal);
+}
+
+if (detailsModal) {
+  detailsModal.addEventListener('click', (e) => {
+    if (e.target === detailsModal) {
+      closeDetailsModal();
+    }
+  });
+}
 
 // Initial Boot setup
 setupSystemBanner();
