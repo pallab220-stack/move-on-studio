@@ -749,7 +749,7 @@ loginModal.addEventListener('click', (e) => {
 });
 
 let activeAuthTab = 'login';
-function switchTab(tab) {
+function switchAuthTab(tab) {
   activeAuthTab = tab;
   if (tab === 'login') {
     tabLogin.classList.add('active');
@@ -764,8 +764,8 @@ function switchTab(tab) {
   }
 }
 
-tabLogin.addEventListener('click', () => switchTab('login'));
-tabSignup.addEventListener('click', () => switchTab('signup'));
+tabLogin.addEventListener('click', () => switchAuthTab('login'));
+tabSignup.addEventListener('click', () => switchAuthTab('signup'));
 
 authForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -1078,7 +1078,7 @@ async function renderTeamWorkload() {
     sortedUsers.forEach(user => {
       const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
       const isHighLoad = user.count >= 3;
-      
+
       const item = document.createElement('div');
       item.className = 'leaderboard-item';
       item.innerHTML = `
