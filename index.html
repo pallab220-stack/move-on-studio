@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AETHER // Agency Task Workspace</title>
+  <!-- Google Fonts: Plus Jakarta Sans for premium typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+  <!-- External stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Container -->
+  <div class="app-layout">
+    
+    <!-- 1. SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <img src="logo.png" alt="Move On Logo" class="agency-logo">
+          <h2>move on</h2>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <div class="menu-group">
+          <span class="menu-label">Workspace</span>
+          <a href="#" class="menu-item active" id="nav-dashboard">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+            Dashboard
+          </a>
+          <a href="#" class="menu-item" id="nav-pending">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Pending Tasks
+            <span class="nav-badge" id="pending-badge-count">3</span>
+          </a>
+          <a href="#" class="menu-item" id="nav-completed">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Completed Tasks
+          </a>
+        </div>
+
+        <div class="menu-group">
+          <span class="menu-label">System</span>
+          <a href="#" class="menu-item" id="nav-admin">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Admin Panel
+            <span class="lock-indicator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Sidebar Footer / Role Switcher -->
+      <div class="sidebar-profile">
+        <div class="profile-card">
+          <div class="avatar-container">
+            <span class="avatar-glow"></span>
+            <div class="avatar" id="user-avatar">AM</div>
+          </div>
+          <div class="profile-info">
+            <span class="profile-name" id="user-name">Alex Mercer</span>
+            <span class="profile-role" id="user-role-label">Administrator</span>
+          </div>
+        </div>
+        <div class="role-selector-container">
+          <label for="role-select">Access Level:</label>
+          <select id="role-select" class="custom-select">
+            <option value="admin" selected>Admin (Full Access)</option>
+            <option value="user">Team Member (Read Only)</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-full" id="btn-trigger-login">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+          Account Login
+        </button>
+      </div>
+    </aside>
+
+    <!-- 2. MAIN CONTENT AREA -->
+    <main class="main-content">
+      
+      <!-- Top Header -->
+      <header class="content-header">
+        <div class="header-greeting">
+          <span class="system-time" id="live-time">SYS_TIME: 17:04:22 // REGION_06</span>
+          <h1 id="greeting-title">Welcome back, Administrator</h1>
+          <p class="subtitle">Here's your agency status overview. You have active operational tasks pending.</p>
+        </div>
+
+        <div class="header-actions">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search tasks, priorities, or tags..." id="search-input">
+          </div>
+          
+          <button class="btn btn-primary" id="btn-new-task-shortcut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Create Task
+          </button>
+        </div>
+      </header>
+
+      <!-- Stats Grid -->
+      <section class="stats-grid">
+        <!-- Stat Card 1: Pending Tasks -->
+        <div class="stat-card" id="stat-pending">
+          <div class="stat-glow green"></div>
+          <div class="stat-header">
+            <span class="stat-title">Pending Operations</span>
+            <div class="stat-icon-wrapper green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+          </div>
+          <div class="stat-body">
+            <span class="stat-value" id="stats-pending-count">3</span>
+            <span class="stat-trend green">▲ Active</span>
+          </div>
+          <div class="stat-footer">
+            <div class="progress-bar-container">
+              <div class="progress-bar green" id="pending-progress" style="width: 60%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat Card 2: Completed Tasks -->
+        <div class="stat-card" id="stat-completed">
+          <div class="stat-glow blue"></div>
+          <div class="stat-header">
+            <span class="stat-title">Completed Work</span>
+            <div class="stat-icon-wrapper blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+          </div>
+          <div class="stat-body">
+            <span class="stat-value" id="stats-completed-count">5</span>
+            <span class="stat-trend blue">✓ Archive verified</span>
+          </div>
+          <div class="stat-footer">
+            <div class="progress-bar-container">
+              <div class="progress-bar blue" id="completed-progress" style="width: 62.5%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat Card 3: Agency Velocity -->
+        <div class="stat-card" id="stat-velocity">
+          <div class="stat-glow purple"></div>
+          <div class="stat-header">
+            <span class="stat-title">Agency Output Rate</span>
+            <div class="stat-icon-wrapper purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+          </div>
+          <div class="stat-body">
+            <span class="stat-value" id="stats-velocity-value">84%</span>
+            <span class="stat-trend purple">▲ +4.2% this cycle</span>
+          </div>
+          <div class="stat-footer">
+            <div class="progress-bar-container">
+              <div class="progress-bar purple" style="width: 84%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. ADD TASK FORM CONTAINER (ADMIN ONLY VIEW) -->
+      <section class="admin-only-section" id="admin-task-form-container">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="header-indicator">
+              <span class="indicator-pulse green"></span>
+              <h3>Create Operation Entry</h3>
+            </div>
+            <span class="badge badge-admin">Admin privilege active</span>
+          </div>
+          
+          <form id="add-task-form" class="task-form">
+            <div class="form-grid">
+              <div class="form-group col-span-2">
+                <label for="task-title">Operation Title</label>
+                <input type="text" id="task-title" required placeholder="e.g., Cinematic Wedding Highlight Reel">
+              </div>
+              
+              <div class="form-group">
+                <label for="task-priority">Priority Protocol</label>
+                <select id="task-priority" class="custom-select">
+                  <option value="high">HIGH [CRITICAL]</option>
+                  <option value="medium" selected>MEDIUM [STANDARD]</option>
+                  <option value="low">LOW [ROUTINE]</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="task-date">Completion Deadline</label>
+                <input type="date" id="task-date" required>
+              </div>
+
+              <div class="form-group">
+                <label for="task-assignee">Operational Officer</label>
+                <select id="task-assignee" class="custom-select">
+                  <option value="Alex Mercer">Alex Mercer (Designer)</option>
+                  <option value="Sarah Connor">Sarah Connor (Developer)</option>
+                  <option value="Marcus Aurelius">Marcus Aurelius (Admin)</option>
+                  <option value="John Doe">John Doe (Researcher)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="task-tags">Classification Tag</label>
+                <select id="task-tags" class="custom-select">
+                  <option value="Rough Cut & Assembly">Rough Cut & Assembly</option>
+                  <option value="DaVinci Resolve Color Grading">DaVinci Resolve Color Grading</option>
+                  <option value="CapCut Short-Form Edit">CapCut Short-Form Edit</option>
+                  <option value="Audio Sync & Sound Design">Audio Sync & Sound Design</option>
+                  <option value="Cinematic / 90s Aesthetic Styling">Cinematic / 90s Aesthetic Styling</option>
+                  <option value="Client Revisions">Client Revisions</option>
+                  <option value="Final Render & Delivery">Final Render & Delivery</option>
+                </select>
+              </div>
+
+              <div class="form-group col-span-2">
+                <label for="task-description">Operation Objectives / Details</label>
+                <textarea id="task-description" rows="3" required placeholder="Describe task scope, technical deliverables, and core operational success criteria..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="reset" class="btn btn-secondary" id="btn-cancel-form">Reset Protocol</button>
+              <button type="submit" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Deploy Task
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Task Grid Section -->
+      <section class="task-section">
+        <div class="task-section-header">
+          <div class="section-title-wrap">
+            <h2>Active Operations</h2>
+            <div class="status-tab-filters">
+              <button class="tab-btn active" data-filter="all">All</button>
+              <button class="tab-btn" data-filter="pending">Pending</button>
+              <button class="tab-btn" data-filter="completed">Completed</button>
+            </div>
+          </div>
+          
+          <div class="grid-layout-controls">
+            <span class="active-count" id="filtered-count">8 tasks match criteria</span>
+          </div>
+        </div>
+
+        <!-- 2. INTERACTIVE TASK GRID -->
+        <div class="task-grid" id="task-grid-container">
+          <!-- Tasks will be dynamically injected here by Javascript -->
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- 3. ELEGANT LOGIN/SIGNUP MODAL OVERLAY -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal-card">
+      <button class="modal-close" id="btn-close-modal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+
+      <div class="modal-header">
+        <div class="logo">
+          <span class="logo-accent"></span>
+          <h2>AETHER</h2>
+          <span class="logo-sub">// ACCESS</span>
+        </div>
+        <p class="modal-subtitle">Authenticate credentials to initiate portal session.</p>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="modal-tabs">
+        <button class="modal-tab-btn active" id="tab-login">Login Auth</button>
+        <button class="modal-tab-btn" id="tab-signup">Register Node</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="auth-form" class="auth-form">
+        <div class="form-group">
+          <label for="auth-email">User Identity ID (Email)</label>
+          <div class="input-glow-wrapper">
+            <input type="email" id="auth-email" required placeholder="name@aether.agency">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="auth-password">Cryptographic Signature (Password)</label>
+          <div class="input-glow-wrapper">
+            <input type="password" id="auth-password" required placeholder="••••••••">
+          </div>
+        </div>
+
+        <!-- Sign Up Fields (Hidden by default) -->
+        <div class="signup-fields" id="signup-extra-fields" style="display: none;">
+          <div class="form-group">
+            <label for="auth-name">Agent Callsign (Full Name)</label>
+            <div class="input-glow-wrapper">
+              <input type="text" id="auth-name" placeholder="Agent Maverick">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="auth-role">Operational Assignment</label>
+            <select id="auth-role" class="custom-select">
+              <option value="admin">Administrator</option>
+              <option value="user" selected>Team Member</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="btn-auth-submit">
+          Access Console
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

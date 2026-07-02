@@ -1,0 +1,818 @@
+/* -------------------------------------------------------------
+ * AETHER WORKSPACE - FIREBASE INTERACTIVE INTERFACE LOGIC
+ * ------------------------------------------------------------- */
+
+// Import Firebase Web SDK Modules (Version 10 modular format) from gstatic CDN
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  addDoc,
+  onSnapshot,
+  updateDoc,
+  arrayUnion,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+/* =============================================================
+ * 📌 INSERT YOUR FIREBASE CONFIG SNIPPET HERE:
+ * ============================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDZGtN7ACxYFrQJYvuB_xazbcnv7bg6InA",
+  authDomain: "move-on-data.firebaseapp.com",
+  projectId: "move-on-data",
+  storageBucket: "move-on-data.firebasestorage.app",
+  messagingSenderId: "529534749232",
+  appId: "1:529534749232:web:cc90c3c11627cde6c2bbf5",
+  measurementId: "G-CERYX601WB"
+};
+/* ============================================================= */
+
+// Initialize Firebase services
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Application State
+let tasks = [];
+let currentUser = null;
+let activeFilter = 'all';
+let searchQuery = '';
+
+// DOM Elements
+const taskGridContainer = document.getElementById('task-grid-container');
+const pendingBadgeCount = document.getElementById('pending-badge-count');
+const statsPendingCount = document.getElementById('stats-pending-count');
+const statsCompletedCount = document.getElementById('stats-completed-count');
+const statsVelocityValue = document.getElementById('stats-velocity-value');
+const filteredCountEl = document.getElementById('filtered-count');
+
+const pendingProgressBar = document.getElementById('pending-progress');
+const completedProgressBar = document.getElementById('completed-progress');
+
+const roleSelect = document.getElementById('role-select');
+const userAvatarEl = document.getElementById('user-avatar');
+const userNameEl = document.getElementById('user-name');
+const userRoleLabel = document.getElementById('user-role-label');
+const greetingTitle = document.getElementById('greeting-title');
+
+const adminTaskFormContainer = document.getElementById('admin-task-form-container');
+const btnNewTaskShortcut = document.getElementById('btn-new-task-shortcut');
+const btnCancelForm = document.getElementById('btn-cancel-form');
+const addTaskForm = document.getElementById('add-task-form');
+
+const loginModal = document.getElementById('login-modal');
+const btnTriggerLogin = document.getElementById('btn-trigger-login');
+const btnCloseModal = document.getElementById('btn-close-modal');
+const authForm = document.getElementById('auth-form');
+const signupExtraFields = document.getElementById('signup-extra-fields');
+const tabLogin = document.getElementById('tab-login');
+const tabSignup = document.getElementById('tab-signup');
+const btnAuthSubmit = document.getElementById('btn-auth-submit');
+
+const searchInput = document.getElementById('search-input');
+const navDashboard = document.getElementById('nav-dashboard');
+const navPending = document.getElementById('nav-pending');
+const navCompleted = document.getElementById('nav-completed');
+const navAdmin = document.getElementById('nav-admin');
+
+// 3. SYSTEM CLOCK SETUP
+function updateClock() {
+  const clockEl = document.getElementById('live-time');
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  clockEl.textContent = `SYS_TIME: ${hours}:${minutes}:${seconds} // REGION_06`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// 4. FIREBASE AUTHENTICATION METHODS
+
+// A. User Signup (Email & Password)
+async function registerNewAgent(email, password, displayName) {
+  try {
+    // Enforces actual Firebase Auth method for signup
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Automatically create a document in the Firestore 'users' collection with default role
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      email: user.email,
+      name: displayName || "New Editor Node",
+      role: "user"
+    });
+    console.log("registerNewAgent: Firestore document node successfully created for uid:", user.uid);
+  } catch (error) {
+    console.error("registerNewAgent Error:", error.message);
+    alert(`Registration Error: ${error.message}`);
+  }
+}
+
+// B. User Login
+async function authenticateAgent(email, password) {
+  try {
+    // Enforces actual Firebase Auth method for login
+    await signInWithEmailAndPassword(auth, email, password);
+    console.log("authenticateAgent: Credentials validated successfully.");
+  } catch (error) {
+    console.error("authenticateAgent Error:", error.message);
+    alert(`Login Error: ${error.message}`);
+  }
+}
+
+// C. User Logout
+async function deauthenticateAgent() {
+  try {
+    await signOut(auth);
+    console.log("deauthenticateAgent: Session terminated successfully.");
+  } catch (error) {
+    console.error("deauthenticateAgent Error:", error.message);
+  }
+}
+
+// D. Check User Role (Runs immediately after login)
+async function checkUserRole(uid) {
+  let role = 'user';
+  let name = 'Agent Node';
+
+  try {
+    // Fetch corresponding user document from Firestore 'users' collection
+    const userDocRef = doc(db, "users", uid);
+    const userDocSnap = await getDoc(userDocRef);
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data();
+      role = userData.role || 'user';
+      name = userData.name || 'Agent';
+    }
+  } catch (error) {
+    console.error("checkUserRole Firestore retrieval error:", error.message);
+  }
+
+  // Update current session data
+  currentUser.role = role;
+  currentUser.name = name;
+  currentUser.avatar = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  // Sync profile UI
+  userAvatarEl.textContent = currentUser.avatar;
+  userNameEl.textContent = currentUser.name;
+  userRoleLabel.textContent = role === 'admin' ? 'Administrator' : 'Team Member';
+  roleSelect.value = role;
+
+  // Unhide or hide HTML Add Task Form based on role privileges
+  if (role === 'admin') {
+    greetingTitle.textContent = `Welcome back, Administrator`;
+    adminTaskFormContainer.style.display = 'block';
+    btnNewTaskShortcut.style.display = 'inline-flex';
+    document.querySelector('.lock-indicator').style.display = 'none';
+    navAdmin.classList.remove('restricted');
+  } else {
+    greetingTitle.textContent = `Welcome back, Operator`;
+    adminTaskFormContainer.style.display = 'none';
+    btnNewTaskShortcut.style.display = 'none';
+    document.querySelector('.lock-indicator').style.display = 'flex';
+    navAdmin.classList.add('restricted');
+  }
+
+  renderTaskGrid();
+  updateStats();
+}
+
+// E. Live Auth Observer (Tied to real Firebase Authentication State)
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    console.log("AuthObserver: Session validated for uid:", user.uid);
+    currentUser = {
+      uid: user.uid,
+      email: user.email
+    };
+
+    // Runs immediately after login
+    await checkUserRole(user.uid);
+    closeModal();
+  } else {
+    console.log("AuthObserver: Session cleared.");
+    currentUser = null;
+    updateUIElements();
+    renderTaskGrid();
+    updateStats();
+    openModal();
+  }
+});
+
+// UI Reset on session signout
+function updateUIElements() {
+  userAvatarEl.textContent = "??";
+  userNameEl.textContent = "Guest Agent";
+  userRoleLabel.textContent = "Unauthorized";
+  roleSelect.value = "user";
+  roleSelect.disabled = true;
+
+  greetingTitle.textContent = `Access Restricted`;
+  adminTaskFormContainer.style.display = 'none';
+  btnNewTaskShortcut.style.display = 'none';
+  document.querySelector('.lock-indicator').style.display = 'flex';
+  navAdmin.classList.add('restricted');
+
+  btnTriggerLogin.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+    Account Login
+  `;
+}
+
+// 5. FIRESTORE REAL-TIME TASK ACTIONS
+
+// A. addTask(title, description, deadline, assignedTo)
+async function addTask(title, description, deadline, assignedTo, priority = 'medium', tags = 'General') {
+  try {
+    await addDoc(collection(db, "tasks"), {
+      title,
+      description,
+      date: deadline,
+      assignee: assignedTo,
+      priority,
+      tags,
+      status: 'pending',
+      completed: false,
+      progressUpdates: [],
+      createdAt: new Date().toISOString()
+    });
+    console.log("addTask: Successfully deployed to Firestore.");
+  } catch (error) {
+    console.error("addTask error:", error.message);
+    alert(`Failed to add task: ${error.message}`);
+  }
+}
+
+// B. loadTasks() (Real-time snapshot listener)
+let unsubscribeTasks = null;
+function loadTasks() {
+  if (unsubscribeTasks) unsubscribeTasks();
+
+  const tasksQuery = collection(db, "tasks");
+  unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
+    tasks = [];
+    snapshot.forEach(docSnap => {
+      tasks.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    // Sort tasks by creation date
+    tasks.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    renderTaskGrid();
+    updateStats();
+    console.log("loadTasks: Grid synced with Firestore in real-time.");
+  }, (error) => {
+    console.error("loadTasks Snapshot Error:", error.message);
+  });
+}
+
+// C. submitDailyProgress(taskId, text)
+async function submitDailyProgress(taskId, text) {
+  if (!text.trim()) return;
+
+  const newUpdate = {
+    text: text.trim(),
+    timestamp: new Date().toISOString(),
+    editorName: currentUser ? currentUser.name : 'Unknown Editor',
+    status: 'pending'
+  };
+
+  try {
+    const taskDocRef = doc(db, "tasks", taskId);
+    await updateDoc(taskDocRef, {
+      progressUpdates: arrayUnion(newUpdate)
+    });
+    console.log("submitDailyProgress: Appended update to Firestore tasks.");
+  } catch (error) {
+    console.error("submitDailyProgress Error:", error.message);
+  }
+}
+
+// D. approveProgressUpdate(taskId, timestamp)
+async function approveProgressUpdate(taskId, timestamp) {
+  try {
+    const taskDocRef = doc(db, "tasks", taskId);
+    const taskDocSnap = await getDoc(taskDocRef);
+    if (taskDocSnap.exists()) {
+      const taskData = taskDocSnap.data();
+      const updates = taskData.progressUpdates || [];
+      const updatedList = updates.map(upd => {
+        if (upd.timestamp === timestamp) {
+          return { ...upd, status: 'approved' };
+        }
+        return upd;
+      });
+      await updateDoc(taskDocRef, { progressUpdates: updatedList });
+      console.log("approveProgressUpdate: Status updated to approved in Firestore.");
+    }
+  } catch (error) {
+    console.error("approveProgressUpdate Error:", error.message);
+  }
+}
+
+// E. rejectProgressUpdate(taskId, timestamp)
+async function rejectProgressUpdate(taskId, timestamp) {
+  try {
+    const taskDocRef = doc(db, "tasks", taskId);
+    const taskDocSnap = await getDoc(taskDocRef);
+    if (taskDocSnap.exists()) {
+      const taskData = taskDocSnap.data();
+      const updates = taskData.progressUpdates || [];
+      const updatedList = updates.map(upd => {
+        if (upd.timestamp === timestamp) {
+          return { ...upd, status: 'rejected' };
+        }
+        return upd;
+      });
+      await updateDoc(taskDocRef, { progressUpdates: updatedList });
+      console.log("rejectProgressUpdate: Status updated to rejected in Firestore.");
+    }
+  } catch (error) {
+    console.error("rejectProgressUpdate Error:", error.message);
+  }
+}
+
+// F. Admin Actions: Task Completions and Deletions
+async function toggleTaskCompletion(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+
+  const isCompleted = task.status === 'completed';
+  const newStatus = isCompleted ? 'pending' : 'completed';
+
+  try {
+    await updateDoc(doc(db, "tasks", id), {
+      status: newStatus,
+      completed: !isCompleted
+    });
+  } catch (error) {
+    console.error("toggleTaskCompletion Error:", error.message);
+  }
+}
+
+async function toggleTaskUpdating(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+
+  const isUpdating = task.status === 'updating';
+  const newStatus = isUpdating ? 'pending' : 'updating';
+
+  try {
+    await updateDoc(doc(db, "tasks", id), {
+      status: newStatus,
+      completed: false
+    });
+  } catch (error) {
+    console.error("toggleTaskUpdating Error:", error.message);
+  }
+}
+
+async function deleteOldTask(id) {
+  try {
+    await deleteDoc(doc(db, "tasks", id));
+    console.log("deleteOldTask: Task document removed from Firestore.");
+  } catch (error) {
+    console.error("deleteOldTask Error:", error.message);
+  }
+}
+
+// 6. DYNAMIC TASK CARD RENDER
+function renderTaskGrid() {
+  taskGridContainer.innerHTML = '';
+
+  const filteredTasks = tasks.filter(task => {
+    if (activeFilter === 'pending' && task.status === 'completed') return false;
+    if (activeFilter === 'completed' && task.status !== 'completed') return false;
+
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      const matchTitle = task.title.toLowerCase().includes(query);
+      const matchDesc = task.description.toLowerCase().includes(query);
+      const matchAssignee = task.assignee.toLowerCase().includes(query);
+      const matchTags = task.tags.toLowerCase().includes(query);
+      const matchPriority = task.priority.toLowerCase().includes(query);
+      return matchTitle || matchDesc || matchAssignee || matchTags || matchPriority;
+    }
+
+    return true;
+  });
+
+  filteredCountEl.textContent = `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'} matching active filters`;
+
+  if (filteredTasks.length === 0) {
+    taskGridContainer.innerHTML = `
+      <div class="empty-state-card col-span-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        <p>No operational tasks match the criteria.</p>
+        <span class="sub-empty">// Clear filters or add a new deployment to populate.</span>
+      </div>
+    `;
+    return;
+  }
+
+  filteredTasks.forEach(task => {
+    const isOverdue = task.status !== 'completed' && new Date(task.date) < new Date('2026-07-02');
+    const initials = task.assignee.split(' ').map(name => name[0]).join('');
+
+    const card = document.createElement('div');
+    card.className = `task-card priority-${task.priority} ${task.status === 'completed' ? 'completed' : ''} ${task.status === 'updating' ? 'updating' : ''}`;
+    card.setAttribute('data-id', task.id);
+
+    let badgeHtml = `<span class="p-badge">${task.priority}</span>`;
+    if (task.status === 'updating') {
+      badgeHtml += ` <span class="status-badge-updating">UPDATING</span>`;
+    } else if (task.status === 'completed') {
+      badgeHtml += ` <span class="status-badge-completed">COMPLETED</span>`;
+    }
+
+    let actionsHtml = '';
+    if (currentUser && currentUser.role === 'admin') {
+      actionsHtml = `
+        <button class="task-action-btn complete-btn ${task.status === 'completed' ? 'active-completed' : ''}" title="${task.status === 'completed' ? 'Re-open task' : 'Mark Completed'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </button>
+        <button class="task-action-btn delete-btn" title="Decommission Task">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </button>
+      `;
+    } else if (currentUser && currentUser.role === 'user') {
+      actionsHtml = `
+        <button class="task-action-btn update-btn ${task.status === 'updating' ? 'active-updating' : ''}" title="${task.status === 'updating' ? 'Revert to Pending' : 'Mark as Updating'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+        </button>
+      `;
+    }
+
+    let updatesSectionHtml = '';
+    const hasUpdates = task.progressUpdates && task.progressUpdates.length > 0;
+
+    // Editor UI: Form is only visible to the assigned editor/user
+    const isAssignedEditor = currentUser && currentUser.role === 'user' && task.assignee === currentUser.name;
+    const isAdmin = currentUser && currentUser.role === 'admin';
+
+    if (hasUpdates || isAssignedEditor) {
+      updatesSectionHtml = `
+        <div class="task-updates-section">
+          <span class="timeline-title">Progress Reports Timeline</span>
+          ${hasUpdates ? `
+            <div class="updates-list">
+              ${task.progressUpdates.map(upd => {
+        let statusBadge = '';
+        let adminActions = '';
+
+        if (upd.status === 'pending') {
+          statusBadge = `<span class="upd-status-badge pending">PENDING APPROVAL</span>`;
+
+          if (isAdmin) {
+            adminActions = `
+                      <div class="upd-admin-actions">
+                        <button class="upd-action-btn approve-btn" data-timestamp="${upd.timestamp}">✓ Approve</button>
+                        <button class="upd-action-btn reject-btn" data-timestamp="${upd.timestamp}">✗ Reject</button>
+                      </div>
+                    `;
+          }
+        } else if (upd.status === 'approved') {
+          statusBadge = `<span class="upd-status-badge approved">✓ APPROVED</span>`;
+        } else if (upd.status === 'rejected') {
+          statusBadge = `<span class="upd-status-badge rejected">✗ REJECTED</span>`;
+        }
+
+        return `
+                  <div class="update-item ${upd.status}">
+                    <div class="update-meta">
+                      <div class="meta-left">
+                        <span class="update-author">${upd.editorName}</span>
+                        ${statusBadge}
+                      </div>
+                      <span class="update-time">${new Date(upd.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div class="update-text">${upd.text}</div>
+                    ${adminActions}
+                  </div>
+                `;
+      }).join('')}
+            </div>
+          ` : ''}
+          
+          ${isAssignedEditor ? `
+            <div class="add-update-form">
+              <input type="text" placeholder="e.g., Rendered first draft, waiting for feedback..." class="update-input" data-task-id="${task.id}">
+              <button class="btn-update-submit" data-task-id="${task.id}">Submit Daily Progress</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="task-card-header">
+        <div class="task-meta-top">
+          <span class="task-classification">${task.tags.split(',')[0]}</span>
+          ${badgeHtml}
+        </div>
+        <div class="task-actions">
+          ${actionsHtml}
+        </div>
+      </div>
+      
+      <div class="task-body-main">
+        <h4 class="task-title">${task.title}</h4>
+        <p class="task-desc">${task.description}</p>
+      </div>
+
+      <div class="task-card-footer">
+        <div class="task-date-info ${isOverdue ? 'overdue' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>${isOverdue ? 'OVERDUE: ' : ''}${task.date}</span>
+        </div>
+
+        <div class="task-assignee-badge">
+          <div class="task-assignee-avatar">${initials}</div>
+          <span class="task-assignee-name">${task.assignee}</span>
+        </div>
+      </div>
+
+      ${updatesSectionHtml}
+    `;
+
+    // Bind event handlers
+    if (currentUser && currentUser.role === 'admin') {
+      const completeBtn = card.querySelector('.complete-btn');
+      completeBtn.addEventListener('click', () => toggleTaskCompletion(task.id));
+
+      const deleteBtn = card.querySelector('.delete-btn');
+      deleteBtn.addEventListener('click', () => deleteOldTask(task.id));
+
+      // Admin Approvals buttons
+      if (hasUpdates) {
+        const approveBtns = card.querySelectorAll('.upd-action-btn.approve-btn');
+        approveBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const timestamp = e.target.getAttribute('data-timestamp');
+            approveProgressUpdate(task.id, timestamp);
+          });
+        });
+
+        const rejectBtns = card.querySelectorAll('.upd-action-btn.reject-btn');
+        rejectBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const timestamp = e.target.getAttribute('data-timestamp');
+            rejectProgressUpdate(task.id, timestamp);
+          });
+        });
+      }
+    } else if (currentUser && currentUser.role === 'user') {
+      const updateBtn = card.querySelector('.update-btn');
+      if (updateBtn) {
+        updateBtn.addEventListener('click', () => toggleTaskUpdating(task.id));
+      }
+
+      // Daily Progress submission
+      if (isAssignedEditor) {
+        const submitBtn = card.querySelector('.btn-update-submit');
+        const inputEl = card.querySelector(`.update-input[data-task-id="${task.id}"]`);
+
+        const handleReport = () => {
+          const textVal = inputEl.value;
+          if (textVal.trim()) {
+            submitDailyProgress(task.id, textVal);
+            inputEl.value = '';
+          }
+        };
+
+        submitBtn.addEventListener('click', handleReport);
+        inputEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleReport();
+          }
+        });
+      }
+    }
+
+    taskGridContainer.appendChild(card);
+  });
+}
+
+function updateStats() {
+  const pendingCount = tasks.filter(t => t.status === 'pending' || t.status === 'updating').length;
+  const completedCount = tasks.filter(t => t.status === 'completed').length;
+  const totalCount = tasks.length;
+
+  pendingBadgeCount.textContent = pendingCount;
+  statsPendingCount.textContent = pendingCount;
+  statsCompletedCount.textContent = completedCount;
+
+  pendingBadgeCount.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+
+  const totalWeight = totalCount || 1;
+  const pendingPercent = Math.round((pendingCount / totalWeight) * 100);
+  const completedPercent = Math.round((completedCount / totalWeight) * 100);
+
+  pendingProgressBar.style.width = `${pendingPercent}%`;
+  completedProgressBar.style.width = `${completedPercent}%`;
+
+  const velocity = Math.round((completedCount / totalWeight) * 100);
+  statsVelocityValue.textContent = `${velocity}%`;
+  const velProgressBar = document.querySelector('#stat-velocity .progress-bar');
+  if (velProgressBar) velProgressBar.style.width = `${velocity}%`;
+}
+
+// 7. GENERAL PORTAL EVENT LISTENERS
+btnTriggerLogin.addEventListener('click', () => {
+  if (currentUser) {
+    deauthenticateAgent();
+  } else {
+    openModal();
+  }
+});
+
+btnCloseModal.addEventListener('click', closeModal);
+
+loginModal.addEventListener('click', (e) => {
+  if (e.target === loginModal && currentUser) {
+    closeModal();
+  }
+});
+
+let activeAuthTab = 'login';
+function switchTab(tab) {
+  activeAuthTab = tab;
+  if (tab === 'login') {
+    tabLogin.classList.add('active');
+    tabSignup.classList.remove('active');
+    signupExtraFields.style.display = 'none';
+    btnAuthSubmit.textContent = 'Access Console';
+  } else {
+    tabLogin.classList.remove('active');
+    tabSignup.classList.add('active');
+    signupExtraFields.style.display = 'flex';
+    btnAuthSubmit.textContent = 'Register Core Node';
+  }
+}
+
+tabLogin.addEventListener('click', () => switchTab('login'));
+tabSignup.addEventListener('click', () => switchTab('signup'));
+
+authForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById('auth-email').value;
+  const password = document.getElementById('auth-password').value;
+
+  if (activeAuthTab === 'login') {
+    authenticateAgent(email, password);
+  } else {
+    const displayName = document.getElementById('auth-name').value;
+    registerNewAgent(email, password, displayName);
+  }
+});
+
+// Admin add task form submit
+addTaskForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  if (!currentUser || currentUser.role !== 'admin') {
+    alert("Authorization Error: Admin credentials required.");
+    return;
+  }
+
+  const title = document.getElementById('task-title').value.trim();
+  const description = document.getElementById('task-description').value.trim();
+  const date = document.getElementById('task-date').value;
+  const assignee = document.getElementById('task-assignee').value;
+  const tags = document.getElementById('task-tags').value;
+  const priority = document.getElementById('task-priority').value;
+
+  if (!title || !date || !description) return;
+
+  addTask(title, description, date, assignee, priority, tags);
+  addTaskForm.reset();
+
+  document.querySelector('.task-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+btnNewTaskShortcut.addEventListener('click', () => {
+  if (!currentUser) {
+    openModal();
+    return;
+  }
+  if (currentUser.role !== 'admin') return;
+
+  adminTaskFormContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('task-title').focus();
+});
+
+btnCancelForm.addEventListener('click', () => {
+  addTaskForm.reset();
+});
+
+// Search and tab filters
+searchInput.addEventListener('input', (e) => {
+  searchQuery = e.target.value;
+  renderTaskGrid();
+});
+
+const tabButtons = document.querySelectorAll('.tab-btn');
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    tabButtons.forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    activeFilter = e.target.getAttribute('data-filter');
+    syncSidebarNav(activeFilter);
+    renderTaskGrid();
+  });
+});
+
+function syncSidebarNav(filterVal) {
+  navDashboard.classList.remove('active');
+  navPending.classList.remove('active');
+  navCompleted.classList.remove('active');
+
+  if (filterVal === 'all') navDashboard.classList.add('active');
+  if (filterVal === 'pending') navPending.classList.add('active');
+  if (filterVal === 'completed') navCompleted.classList.add('active');
+}
+
+navDashboard.addEventListener('click', (e) => {
+  e.preventDefault();
+  activeFilter = 'all';
+  tabButtons.forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-btn[data-filter="all"]').classList.add('active');
+  syncSidebarNav('all');
+  renderTaskGrid();
+});
+
+navPending.addEventListener('click', (e) => {
+  e.preventDefault();
+  activeFilter = 'pending';
+  tabButtons.forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-btn[data-filter="pending"]').classList.add('active');
+  syncSidebarNav('pending');
+  renderTaskGrid();
+});
+
+navCompleted.addEventListener('click', (e) => {
+  e.preventDefault();
+  activeFilter = 'completed';
+  tabButtons.forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-btn[data-filter="completed"]').classList.add('active');
+  syncSidebarNav('completed');
+  renderTaskGrid();
+});
+
+navAdmin.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (!currentUser) {
+    openModal();
+  } else if (currentUser.role !== 'admin') {
+    alert("Administrative panel locked. Requires elevated access clearance.");
+  } else {
+    adminTaskFormContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+
+roleSelect.addEventListener('change', (e) => {
+  if (!currentUser) {
+    alert("Please log in first to authorize access switches.");
+    roleSelect.value = "user";
+    return;
+  }
+});
+
+function openModal() {
+  loginModal.classList.add('open');
+}
+
+function closeModal() {
+  loginModal.classList.remove('open');
+}
+
+// 8. DIAGNOSTIC SYSTEM BANNER SETUP
+function setupSystemBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'system-banner live';
+  banner.innerHTML = `
+    <span class="banner-pulse green"></span>
+    <span class="banner-text">FIREBASE OPS ACTIVE // SESSION SECURED</span>
+  `;
+  document.body.appendChild(banner);
+}
+
+// Initial Boot setup
+setupSystemBanner();
+updateUIElements();
+loadTasks();
