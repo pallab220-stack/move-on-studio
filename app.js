@@ -218,6 +218,9 @@ async function checkUserRole(uid) {
 
 // E. Live Auth Observer (Tied to real Firebase Authentication State)
 onAuthStateChanged(auth, async (user) => {
+  const appLayout = document.querySelector('.app-layout');
+  const gatewayScreen = document.getElementById('branch-gateway');
+
   if (user) {
     console.log("AuthObserver: Session validated for uid:", user.uid);
     currentUser = {
@@ -230,15 +233,45 @@ onAuthStateChanged(auth, async (user) => {
     await fetchUsersAndPopulateDropdown();
     await requestNotificationPermission();
     closeModal();
+
+    // Determine gateway vs dashboard transition
+    const storedBranch = sessionStorage.getItem('selectedBranch');
+    if (storedBranch) {
+      // Direct to Dashboard State
+      if (gatewayScreen) {
+        gatewayScreen.classList.add('hidden');
+      }
+      if (appLayout) {
+        appLayout.classList.remove('hidden');
+      }
+      applyBranchSettings(storedBranch);
+    } else {
+      // Post-Login Gateway State
+      if (gatewayScreen) {
+        gatewayScreen.classList.remove('hidden');
+        gatewayScreen.classList.remove('fade-out');
+      }
+      if (appLayout) {
+        appLayout.classList.add('hidden');
+      }
+    }
   } else {
     console.log("AuthObserver: Session cleared.");
     currentUser = null;
+    sessionStorage.removeItem('selectedBranch'); // Clear selected branch on logout
+
+    // Hide both gateway and dashboard
+    if (gatewayScreen) {
+      gatewayScreen.classList.add('hidden');
+    }
+    if (appLayout) {
+      appLayout.classList.add('hidden');
+    }
+
     updateUIElements();
     renderTaskGrid();
     updateDashboardStats(tasks);
-    if (sessionStorage.getItem('selectedBranch')) {
-      openModal();
-    }
+    openModal();
   }
 });
 
@@ -1236,6 +1269,7 @@ function applyBranchSettings(branch) {
 
   const agencyLogoImg = document.querySelector('.agency-logo');
   const gatewayScreen = document.getElementById('branch-gateway');
+  const appLayout = document.querySelector('.app-layout');
 
   if (branch === 'jadukor') {
     document.title = "Jadukor Studio // Task Workspace";
@@ -1254,11 +1288,17 @@ function applyBranchSettings(branch) {
   // Fade out and hide gateway screen
   if (gatewayScreen) {
     gatewayScreen.classList.add('fade-out');
+    // Ensure display is set to none after transition completes
+    setTimeout(() => {
+      if (currentBranch === branch) {
+        gatewayScreen.classList.add('hidden');
+      }
+    }, 500);
   }
 
-  // Trigger login modal if user is not logged in
-  if (!currentUser) {
-    openModal();
+  // Reveal the main dashboard
+  if (appLayout) {
+    appLayout.classList.remove('hidden');
   }
 }
 
@@ -1284,8 +1324,3 @@ updateUIElements();
 loadTasks();
 fetchUsersAndPopulateDropdown();
 registerMessagingServiceWorker();
-
-// Auto-run if branch is already active in session
-if (currentBranch) {
-  applyBranchSettings(currentBranch);
-}

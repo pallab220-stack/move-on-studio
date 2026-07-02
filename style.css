@@ -1965,4 +1965,9 @@ body {
   box-shadow: 0 4px 12px rgba(0, 176, 255, 0.3);
 }
 
+/* Helper Utilities */
+.hidden {
+  display: none !important;
+}
+
 
