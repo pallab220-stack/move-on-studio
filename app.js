@@ -862,36 +862,52 @@ authForm.addEventListener('submit', (e) => {
 addTaskForm.addEventListener('submit', (e) => {
   e.preventDefault();
 
-  const title = document.getElementById('task-title').value.trim();
-  const description = document.getElementById('task-description').value.trim();
-  const date = document.getElementById('task-date').value;
-  const assignee = document.getElementById('task-assignee').value;
-  const tags = document.getElementById('task-tags').value;
-  const priority = document.getElementById('task-priority').value;
-
-  if (!title || !date || !description) return;
-
   const activeBranch = sessionStorage.getItem('selectedBranch');
-  let extraData = null;
+  const activeCard = document.querySelector('.category-select-card.active');
+  const category = activeCard ? activeCard.getAttribute('data-category') : 'editing';
 
-  if (activeBranch === 'jadukor') {
-    const activeCard = document.querySelector('.category-select-card.active');
-    const category = activeCard ? activeCard.getAttribute('data-category') : 'editing';
-    if (category === 'shooting') {
-      extraData = {
-        category: 'shooting',
-        shootDate: document.getElementById('shoot-date').value || '',
-        shootTime: document.getElementById('shoot-time').value || '',
-        photographer: document.getElementById('shoot-photographer').value || '',
-        cinematographer: document.getElementById('shoot-cinematographer').value || '',
-        clientName: document.getElementById('client-name').value.trim() || '',
-        clientPhone: document.getElementById('client-phone').value.trim() || '',
-        shootPlace: document.getElementById('shoot-place').value.trim() || ''
-      };
-    } else {
+  let title, description, date, assignee, priority, tags, extraData = null;
+
+  if (activeBranch === 'jadukor' && category === 'shooting') {
+    // Collect shooting-specific data
+    const clientNameVal = document.getElementById('client-name').value.trim();
+    const shootPlaceVal = document.getElementById('shoot-place').value.trim();
+    const shootDateVal = document.getElementById('shoot-date').value;
+
+    title = `Shoot: ${clientNameVal} - ${shootPlaceVal || 'TBD'}`;
+    description = document.getElementById('shoot-description').value.trim() || 'No instructions provided.';
+    date = shootDateVal;
+    
+    // Default system values for shooting assignee/priority/tags
+    assignee = document.getElementById('shoot-photographer').value || 'Unassigned';
+    priority = 'medium'; // Shooting default priority
+    tags = 'Shooting Operation';
+
+    extraData = {
+      category: 'shooting',
+      shootDate: shootDateVal || '',
+      shootTime: document.getElementById('shoot-time').value || '',
+      photographer: document.getElementById('shoot-photographer').value || '',
+      cinematographer: document.getElementById('shoot-cinematographer').value || '',
+      clientName: clientNameVal,
+      clientPhone: document.getElementById('client-phone').value.trim() || '',
+      shootPlace: shootPlaceVal
+    };
+  } else {
+    // Collect standard editing data
+    title = document.getElementById('task-title').value.trim();
+    description = document.getElementById('task-description').value.trim();
+    date = document.getElementById('task-date').value;
+    assignee = document.getElementById('task-assignee').value;
+    tags = document.getElementById('task-tags').value;
+    priority = document.getElementById('task-priority').value;
+
+    if (activeBranch === 'jadukor') {
       extraData = { category: 'editing' };
     }
   }
+
+  if (!title || !date || !description) return;
 
   addTask(title, description, date, assignee, priority, tags, extraData);
   addTaskForm.reset();
@@ -1386,37 +1402,68 @@ function showBranchGateway() {
   }
 }
 
+function toggleFormValidation(category) {
+  const taskTitle = document.getElementById('task-title');
+  const taskDate = document.getElementById('task-date');
+  const taskDesc = document.getElementById('task-description');
+  
+  const clientName = document.getElementById('client-name');
+  const shootDate = document.getElementById('shoot-date');
+  const shootDesc = document.getElementById('shoot-description');
+
+  if (category === 'shooting') {
+    if (taskTitle) taskTitle.required = false;
+    if (taskDate) taskDate.required = false;
+    if (taskDesc) taskDesc.required = false;
+
+    if (clientName) clientName.required = true;
+    if (shootDate) shootDate.required = true;
+    if (shootDesc) shootDesc.required = true;
+  } else {
+    if (taskTitle) taskTitle.required = true;
+    if (taskDate) taskDate.required = true;
+    if (taskDesc) taskDesc.required = true;
+
+    if (clientName) clientName.required = false;
+    if (shootDate) shootDate.required = false;
+    if (shootDesc) shootDesc.required = false;
+  }
+}
+
 function adjustDynamicFormForBranch() {
   const activeBranch = sessionStorage.getItem('selectedBranch');
   const catGroup = document.getElementById('task-category-group');
-  const detailsContainer = document.getElementById('shooting-details-container');
+  const editingView = document.getElementById('form-editing-view');
+  const shootingView = document.getElementById('form-shooting-view');
 
-  if (!catGroup || !detailsContainer) return;
+  if (!catGroup || !editingView || !shootingView) return;
 
   if (activeBranch === 'jadukor') {
     catGroup.classList.remove('hidden');
     
-    // Check which card is currently active
     const activeCard = document.querySelector('.category-select-card.active');
     const category = activeCard ? activeCard.getAttribute('data-category') : 'editing';
     
     if (category === 'shooting') {
-      detailsContainer.classList.remove('hidden');
+      editingView.style.display = 'none';
+      shootingView.style.display = 'block';
+      toggleFormValidation('shooting');
     } else {
-      detailsContainer.classList.add('hidden');
+      editingView.style.display = 'block';
+      shootingView.style.display = 'none';
+      toggleFormValidation('editing');
     }
   } else {
-    // Reset and hide
     catGroup.classList.add('hidden');
-    detailsContainer.classList.add('hidden');
+    editingView.style.display = 'block';
+    shootingView.style.display = 'none';
+    toggleFormValidation('editing');
     
-    // Set active card back to editing
     const editingCard = document.getElementById('cat-card-editing');
     const shootingCard = document.getElementById('cat-card-shooting');
     if (editingCard) editingCard.classList.add('active');
     if (shootingCard) shootingCard.classList.remove('active');
 
-    // Reset input fields
     const shootDate = document.getElementById('shoot-date');
     const shootTime = document.getElementById('shoot-time');
     const photographer = document.getElementById('shoot-photographer');
@@ -1424,6 +1471,7 @@ function adjustDynamicFormForBranch() {
     const clientName = document.getElementById('client-name');
     const clientPhone = document.getElementById('client-phone');
     const shootPlace = document.getElementById('shoot-place');
+    const shootDescription = document.getElementById('shoot-description');
 
     if (shootDate) shootDate.value = '';
     if (shootTime) shootTime.value = '';
@@ -1432,6 +1480,7 @@ function adjustDynamicFormForBranch() {
     if (clientName) clientName.value = '';
     if (clientPhone) clientPhone.value = '';
     if (shootPlace) shootPlace.value = '';
+    if (shootDescription) shootDescription.value = '';
   }
 }
 
@@ -1463,23 +1512,24 @@ if (btnSwitchBranch) {
 // Bind click listeners for category select cards
 const catCardEditing = document.getElementById('cat-card-editing');
 const catCardShooting = document.getElementById('cat-card-shooting');
-const shootingDetailsContainer = document.getElementById('shooting-details-container');
+const editingView = document.getElementById('form-editing-view');
+const shootingView = document.getElementById('form-shooting-view');
 
 if (catCardEditing && catCardShooting) {
   catCardEditing.addEventListener('click', () => {
     catCardEditing.classList.add('active');
     catCardShooting.classList.remove('active');
-    if (shootingDetailsContainer) {
-      shootingDetailsContainer.classList.add('hidden');
-    }
+    if (editingView) editingView.style.display = 'block';
+    if (shootingView) shootingView.style.display = 'none';
+    toggleFormValidation('editing');
   });
 
   catCardShooting.addEventListener('click', () => {
     catCardShooting.classList.add('active');
     catCardEditing.classList.remove('active');
-    if (shootingDetailsContainer) {
-      shootingDetailsContainer.classList.remove('hidden');
-    }
+    if (editingView) editingView.style.display = 'none';
+    if (shootingView) shootingView.style.display = 'block';
+    toggleFormValidation('shooting');
   });
 }
 

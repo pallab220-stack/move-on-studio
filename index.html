@@ -215,125 +215,132 @@
             </div>
             
             <form id="add-task-form" class="task-form">
-              <div class="form-grid">
-                <div class="form-group col-span-2">
-                  <label for="task-title">Operation Title</label>
-                  <input type="text" id="task-title" required placeholder="e.g., Cinematic Wedding Highlight Reel">
-                </div>
-                
-                <div class="form-group">
-                  <label for="task-priority">Priority Protocol</label>
-                  <select id="task-priority" class="custom-select">
-                    <option value="high">HIGH [CRITICAL]</option>
-                    <option value="medium" selected>MEDIUM [STANDARD]</option>
-                    <option value="low">LOW [ROUTINE]</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="task-date">Completion Deadline</label>
-                  <input type="date" id="task-date" required>
-                </div>
-
-                <div class="form-group">
-                  <label for="task-assignee">Operational Officer</label>
-                  <select id="task-assignee" class="custom-select">
-                    <option value="Sarah Connor">Sarah Connor (Developer)</option>
-                    <option value="Marcus Aurelius">Marcus Aurelius (Admin)</option>
-                    <option value="John Doe">John Doe (Researcher)</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="task-tags">Classification Tag</label>
-                  <select id="task-tags" class="custom-select">
-                    <option value="Rough Cut & Assembly">Rough Cut & Assembly</option>
-                    <option value="DaVinci Resolve Color Grading">DaVinci Resolve Color Grading</option>
-                    <option value="CapCut Short-Form Edit">CapCut Short-Form Edit</option>
-                    <option value="Audio Sync & Sound Design">Audio Sync & Sound Design</option>
-                    <option value="Cinematic / 90s Aesthetic Styling">Cinematic / 90s Aesthetic Styling</option>
-                    <option value="Client Revisions">Client Revisions</option>
-                    <option value="Final Render & Delivery">Final Render & Delivery</option>
-                  </select>
-                </div>
-
-                <!-- Jadukor Branch Fields: Task Category Selection -->
-                <div class="form-group col-span-2 hidden" id="task-category-group">
-                  <label>Operation Category</label>
-                  <div class="category-cards-wrapper">
-                    <div class="category-select-card active" data-category="editing" id="cat-card-editing">
-                      <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                      </div>
-                      <div class="card-text">
-                        <h4>Editing Operation</h4>
-                        <p>Post-production, grading & assembly</p>
-                      </div>
+              <!-- 1. Task Category Selection (Always visible at the top of the form) -->
+              <div class="form-group col-span-2 hidden" id="task-category-group" style="margin-bottom: 24px;">
+                <label>Operation Category</label>
+                <div class="category-cards-wrapper">
+                  <div class="category-select-card active" data-category="editing" id="cat-card-editing">
+                    <div class="card-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
                     </div>
-                    <div class="category-select-card" data-category="shooting" id="cat-card-shooting">
-                      <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                      </div>
-                      <div class="card-text">
-                        <h4>Shooting Operation</h4>
-                        <p>On-site photo/video capture details</p>
-                      </div>
+                    <div class="card-text">
+                      <h4>Editing Operation</h4>
+                      <p>Post-production, grading & assembly</p>
                     </div>
                   </div>
-                </div>
-
-                <!-- Shooting Details Container (Hidden by default) -->
-                <div class="form-group col-span-2 hidden" id="shooting-details-container">
-                  <div class="form-grid" style="margin-top: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%;">
-                    <div class="form-group">
-                      <label for="shoot-date">Shoot Date</label>
-                      <input type="date" id="shoot-date">
+                  <div class="category-select-card" data-category="shooting" id="cat-card-shooting">
+                    <div class="card-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                     </div>
-                    <div class="form-group">
-                      <label for="shoot-time">Shoot Time</label>
-                      <input type="time" id="shoot-time">
-                    </div>
-                    <div class="form-group">
-                      <label for="shoot-photographer">Photographer</label>
-                      <select id="shoot-photographer" class="custom-select">
-                        <option value="">-- Select Photographer --</option>
-                        <option value="Alex Mercer">Alex Mercer</option>
-                        <option value="Sarah Connor">Sarah Connor</option>
-                        <option value="John Doe">John Doe</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label for="shoot-cinematographer">Cinematographer</label>
-                      <select id="shoot-cinematographer" class="custom-select">
-                        <option value="">-- Select Cinematographer --</option>
-                        <option value="Jane Foster">Jane Foster</option>
-                        <option value="Marcus Aurelius">Marcus Aurelius</option>
-                        <option value="Kyle Reese">Kyle Reese</option>
-                      </select>
-                    </div>
-                    <!-- New Client & Location Fields -->
-                    <div class="form-group">
-                      <label for="client-name">Client Name</label>
-                      <input type="text" id="client-name" placeholder="e.g., Emily Watson">
-                    </div>
-                    <div class="form-group">
-                      <label for="client-phone">Client Phone Number</label>
-                      <input type="tel" id="client-phone" placeholder="e.g., +123456789">
-                    </div>
-                    <div class="form-group col-span-2">
-                      <label for="shoot-place">Shoot Place / Location</label>
-                      <input type="text" id="shoot-place" placeholder="e.g., Central Park Plaza, NY">
+                    <div class="card-text">
+                      <h4>Shooting Operation</h4>
+                      <p>On-site photo/video capture details</p>
                     </div>
                   </div>
-                </div>
-
-                <div class="form-group col-span-2">
-                  <label for="task-description">Operation Objectives / Details</label>
-                  <textarea id="task-description" rows="3" required placeholder="Describe task scope, technical deliverables, and core operational success criteria..."></textarea>
                 </div>
               </div>
 
-              <div class="form-actions">
+              <!-- 2. Editing Operation Form View -->
+              <div id="form-editing-view">
+                <div class="form-grid">
+                  <div class="form-group col-span-2">
+                    <label for="task-title">Operation Title</label>
+                    <input type="text" id="task-title" required placeholder="e.g., Cinematic Wedding Highlight Reel">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="task-priority">Priority Protocol</label>
+                    <select id="task-priority" class="custom-select">
+                      <option value="high">HIGH [CRITICAL]</option>
+                      <option value="medium" selected>MEDIUM [STANDARD]</option>
+                      <option value="low">LOW [ROUTINE]</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="task-date">Completion Deadline</label>
+                    <input type="date" id="task-date" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="task-assignee">Operational Officer</label>
+                    <select id="task-assignee" class="custom-select">
+                      <option value="Sarah Connor">Sarah Connor (Developer)</option>
+                      <option value="Marcus Aurelius">Marcus Aurelius (Admin)</option>
+                      <option value="John Doe">John Doe (Researcher)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="task-tags">Classification Tag</label>
+                    <select id="task-tags" class="custom-select">
+                      <option value="Rough Cut & Assembly">Rough Cut & Assembly</option>
+                      <option value="DaVinci Resolve Color Grading">DaVinci Resolve Color Grading</option>
+                      <option value="CapCut Short-Form Edit">CapCut Short-Form Edit</option>
+                      <option value="Audio Sync & Sound Design">Audio Sync & Sound Design</option>
+                      <option value="Cinematic / 90s Aesthetic Styling">Cinematic / 90s Aesthetic Styling</option>
+                      <option value="Client Revisions">Client Revisions</option>
+                      <option value="Final Render & Delivery">Final Render & Delivery</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group col-span-2">
+                    <label for="task-description">Operation Objectives / Details</label>
+                    <textarea id="task-description" rows="3" required placeholder="Describe task scope, technical deliverables, and core operational success criteria..."></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Shooting Operation Form View -->
+              <div id="form-shooting-view" style="display:none;">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="client-name">Client Name</label>
+                    <input type="text" id="client-name" placeholder="e.g., Emily Watson">
+                  </div>
+                  <div class="form-group">
+                    <label for="client-phone">Client Phone Number</label>
+                    <input type="tel" id="client-phone" placeholder="e.g., +123456789">
+                  </div>
+                  <div class="form-group col-span-2">
+                    <label for="shoot-place">Shoot Place / Location</label>
+                    <input type="text" id="shoot-place" placeholder="e.g., Central Park Plaza, NY">
+                  </div>
+                  <div class="form-group">
+                    <label for="shoot-date">Shoot Date</label>
+                    <input type="date" id="shoot-date">
+                  </div>
+                  <div class="form-group">
+                    <label for="shoot-time">Shoot Time</label>
+                    <input type="time" id="shoot-time">
+                  </div>
+                  <div class="form-group">
+                    <label for="shoot-photographer">Photographer</label>
+                    <select id="shoot-photographer" class="custom-select">
+                      <option value="">-- Select Photographer --</option>
+                      <option value="Alex Mercer">Alex Mercer</option>
+                      <option value="Sarah Connor">Sarah Connor</option>
+                      <option value="John Doe">John Doe</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="shoot-cinematographer">Cinematographer</label>
+                    <select id="shoot-cinematographer" class="custom-select">
+                      <option value="">-- Select Cinematographer --</option>
+                      <option value="Jane Foster">Jane Foster</option>
+                      <option value="Marcus Aurelius">Marcus Aurelius</option>
+                      <option value="Kyle Reese">Kyle Reese</option>
+                    </select>
+                  </div>
+                  <div class="form-group col-span-2">
+                    <label for="shoot-description">Special Instructions / Details</label>
+                    <textarea id="shoot-description" rows="3" placeholder="Describe shoot schedule, specific equipment needs, or client special requests..."></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Shared Submit/Reset Controls -->
+              <div class="form-actions" style="margin-top: 24px;">
                 <button type="reset" class="btn btn-secondary" id="btn-cancel-form">Reset Protocol</button>
                 <button type="submit" class="btn btn-primary">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
