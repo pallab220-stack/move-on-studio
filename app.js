@@ -708,11 +708,18 @@ function updateDashboardStats(tasksList) {
   const completedCount = tasksList.filter(t => t.status === 'completed').length;
   const totalCount = tasksList.length;
 
-  pendingBadgeCount.textContent = pendingCount;
-  statsPendingCount.textContent = pendingCount;
-  statsCompletedCount.textContent = completedCount;
-
-  pendingBadgeCount.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  if (pendingBadgeCount) {
+    pendingBadgeCount.textContent = pendingCount;
+    pendingBadgeCount.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
+  
+  if (statsPendingCount) {
+    statsPendingCount.textContent = pendingCount;
+  }
+  
+  if (statsCompletedCount) {
+    statsCompletedCount.textContent = completedCount;
+  }
 
   const totalWeight = totalCount || 1;
   const pendingPercent = Math.round((pendingCount / totalWeight) * 100);
@@ -722,7 +729,10 @@ function updateDashboardStats(tasksList) {
   if (completedProgressBar) completedProgressBar.style.width = `${completedPercent}%`;
 
   const velocity = Math.round((completedCount / totalWeight) * 100);
-  statsVelocityValue.textContent = `${velocity}%`;
+  if (statsVelocityValue) {
+    statsVelocityValue.textContent = `${velocity}%`;
+  }
+  
   const velProgressBar = document.querySelector('#stat-velocity .progress-bar');
   if (velProgressBar) velProgressBar.style.width = `${velocity}%`;
 }
