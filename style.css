@@ -105,8 +105,14 @@ body {
   gap: 8px;
 }
 
+.sidebar-header .logo {
+  justify-content: center;
+  width: 100%;
+}
+
 .agency-logo {
-  max-height: 30px;
+  max-height: 60px;
+  max-width: 150px;
   object-fit: contain;
   vertical-align: middle;
 }
