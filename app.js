@@ -16,13 +16,21 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
   collection,
   addDoc,
   onSnapshot,
   updateDoc,
   arrayUnion,
-  deleteDoc
+  deleteDoc,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+  getMessaging,
+  getToken,
+  onMessage
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
 /* =============================================================
  * 📌 INSERT YOUR FIREBASE CONFIG SNIPPET HERE:
@@ -42,6 +50,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const messaging = getMessaging(app);
 
 // Application State
 let tasks = [];
@@ -115,6 +124,7 @@ async function registerNewAgent(email, password, displayName) {
       role: "user"
     });
     console.log("registerNewAgent: Firestore document node successfully created for uid:", user.uid);
+    await fetchUsersAndPopulateDropdown();
   } catch (error) {
     console.error("registerNewAgent Error:", error.message);
     alert(`Registration Error: ${error.message}`);
@@ -202,6 +212,8 @@ onAuthStateChanged(auth, async (user) => {
 
     // Runs immediately after login
     await checkUserRole(user.uid);
+    await fetchUsersAndPopulateDropdown();
+    await requestNotificationPermission();
     closeModal();
   } else {
     console.log("AuthObserver: Session cleared.");
@@ -251,6 +263,33 @@ async function addTask(title, description, deadline, assignedTo, priority = 'med
       createdAt: new Date().toISOString()
     });
     console.log("addTask: Successfully deployed to Firestore.");
+
+    // Fetch assignee's FCM token from 'users' collection (check both name and email matching)
+    const usersRef = collection(db, "users");
+    const nameQuery = query(usersRef, where("name", "==", assignedTo));
+    const emailQuery = query(usersRef, where("email", "==", assignedTo));
+
+    const [nameSnapshot, emailSnapshot] = await Promise.all([
+      getDocs(nameQuery),
+      getDocs(emailQuery)
+    ]);
+
+    let assigneeToken = null;
+    nameSnapshot.forEach((docSnap) => {
+      if (docSnap.data().fcmToken) assigneeToken = docSnap.data().fcmToken;
+    });
+
+    if (!assigneeToken) {
+      emailSnapshot.forEach((docSnap) => {
+        if (docSnap.data().fcmToken) assigneeToken = docSnap.data().fcmToken;
+      });
+    }
+
+    if (assigneeToken) {
+      await sendFCMNotification(assigneeToken, title, description);
+    } else {
+      console.log(`No FCM token found for assignee: ${assignedTo}`);
+    }
   } catch (error) {
     console.error("addTask error:", error.message);
     alert(`Failed to add task: ${error.message}`);
@@ -386,6 +425,30 @@ async function deleteOldTask(id) {
     console.log("deleteOldTask: Task document removed from Firestore.");
   } catch (error) {
     console.error("deleteOldTask Error:", error.message);
+  }
+}
+
+// Function to fetch all user documents and populate the assignee dropdown
+async function fetchUsersAndPopulateDropdown() {
+  const assigneeSelect = document.getElementById('task-assignee');
+  if (!assigneeSelect) return;
+
+  try {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    assigneeSelect.innerHTML = '';
+    querySnapshot.forEach((docSnap) => {
+      const userData = docSnap.data();
+      const name = userData.name || userData.email;
+      if (name) {
+        const option = document.createElement('option');
+        option.value = name.trim();
+        option.textContent = name.trim();
+        assigneeSelect.appendChild(option);
+      }
+    });
+    console.log("fetchUsersAndPopulateDropdown: Dropdown successfully populated.");
+  } catch (error) {
+    console.error("fetchUsersAndPopulateDropdown Error:", error.message);
   }
 }
 
@@ -801,6 +864,116 @@ function closeModal() {
   loginModal.classList.remove('open');
 }
 
+// 9. FIREBASE CLOUD MESSAGING (FCM) SETUP
+
+// Register service worker for FCM background notifications
+function registerMessagingServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered successfully with scope:', registration.scope);
+      })
+      .catch((err) => {
+        console.error('Service Worker registration failed:', err);
+      });
+  }
+}
+
+// Request permission and retrieve/save token to current user's profile
+async function requestNotificationPermission() {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+
+      // Get registration token from FCM
+      const token = await getToken(messaging, {
+        serviceWorkerRegistration: await navigator.serviceWorker.ready,
+        vapidKey: 'BL3TkwCRsdP0LPqylBPO1CmtBTA4Oa7bRSjsZ8Wgu3GREWiUir0XHOsXHIEY2jHbvs8HgWBUA-fRCAQvbMnsyWg' // Placeholder VAPID key
+      });
+
+      if (token) {
+        console.log('FCM token generated:', token);
+        if (currentUser) {
+          await updateDoc(doc(db, "users", currentUser.uid), {
+            fcmToken: token
+          });
+          console.log('FCM token saved successfully to Firestore users collection.');
+        }
+      } else {
+        console.warn('No FCM registration token available.');
+      }
+    } else {
+      console.warn('Unable to get permission to send push notifications.');
+    }
+  } catch (error) {
+    console.error('Error requesting notification permission:', error);
+  }
+}
+
+// Send push notification using FCM v1 API via the Cloud Function
+async function sendFCMNotification(targetToken, taskTitle, taskDescription) {
+  const functionUrl = "https://us-central1-move-on-data.cloudfunctions.net/sendFCMNotification";
+
+  try {
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        token: targetToken,
+        title: "New Operation Assigned",
+        body: `You have been assigned to: ${taskTitle}`
+      })
+    });
+
+    if (response.ok) {
+      console.log("FCM Notification sent successfully via Cloud Function.");
+    } else {
+      console.warn("FCM Notification relay failed:", await response.text());
+    }
+  } catch (error) {
+    console.error("Error invoking FCM Notification Cloud Function:", error);
+  }
+}
+
+// Foreground message handler
+onMessage(messaging, (payload) => {
+  console.log('FCM Message received in foreground:', payload);
+  const notificationTitle = payload.notification?.title || 'Notification';
+  const notificationBody = payload.notification?.body || '';
+
+  showLocalNotificationToast(notificationTitle, notificationBody);
+});
+
+// Helper to show an elegant local toast notification
+function showLocalNotificationToast(title, body) {
+  const toast = document.createElement('div');
+  toast.className = 'local-toast-notification';
+  toast.innerHTML = `
+    <div class="toast-header">
+      <span class="toast-pulse"></span>
+      <strong>${title}</strong>
+      <button class="toast-close-btn">&times;</button>
+    </div>
+    <div class="toast-body">${body}</div>
+  `;
+  document.body.appendChild(toast);
+
+  // Animate toast entry
+  setTimeout(() => toast.classList.add('show'), 10);
+
+  const closeBtn = toast.querySelector('.toast-close-btn');
+  const dismissToast = () => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  };
+
+  closeBtn.addEventListener('click', dismissToast);
+  setTimeout(dismissToast, 6000); // Auto-dismiss after 6 seconds
+}
+
 // 8. DIAGNOSTIC SYSTEM BANNER SETUP
 function setupSystemBanner() {
   const banner = document.createElement('div');
@@ -816,3 +989,5 @@ function setupSystemBanner() {
 setupSystemBanner();
 updateUIElements();
 loadTasks();
+fetchUsersAndPopulateDropdown();
+registerMessagingServiceWorker();
