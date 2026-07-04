@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
   <!-- External stylesheet -->
   <link rel="stylesheet" href="style.css">
+  <!-- PWA Manifest link -->
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
@@ -84,6 +86,10 @@
           <a href="#" class="menu-item" id="nav-switch-branch">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             Switch Branch
+          </a>
+          <a href="#" class="menu-item hidden" id="nav-install-app">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Install App
           </a>
         </div>
       </nav>
@@ -851,6 +857,23 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 6. PWA CUSTOM FLOATING INSTALL BANNER -->
+  <div id="pwa-install-banner" class="hidden">
+    <div class="pwa-banner-content glassmorphism">
+      <div class="pwa-logo-wrap">
+        <img src="logo.png" alt="Move On Logo" class="pwa-banner-logo">
+      </div>
+      <div class="pwa-text-wrap">
+        <h4>Experience Move On Studio</h4>
+        <p>Install the app for instant notifications, offline access, and a dedicated standalone window.</p>
+      </div>
+      <div class="pwa-btn-wrap">
+        <button class="btn btn-secondary" id="btn-pwa-dismiss">Not Now</button>
+        <button class="btn btn-primary" id="btn-pwa-install">Install App</button>
+      </div>
     </div>
   </div>
 

@@ -58,6 +58,7 @@ let currentUser = null;
 let activeFilter = 'all';
 let searchQuery = '';
 let activeTab = 'my-workspace'; // 'my-workspace', 'team-workload', 'monthly-analytics'
+let deferredPrompt = null;
 
 // DOM Elements
 const taskGridContainer = document.getElementById('task-grid-container');
@@ -95,6 +96,12 @@ const navMyWorkspace = document.getElementById('nav-my-workspace');
 const navTeamWorkload = document.getElementById('nav-team-workload');
 const navMonthlyAnalytics = document.getElementById('nav-monthly-analytics');
 const navAdmin = document.getElementById('nav-admin');
+
+// PWA installation UI elements
+const navInstallApp = document.getElementById('nav-install-app');
+const pwaInstallBanner = document.getElementById('pwa-install-banner');
+const btnPwaInstall = document.getElementById('btn-pwa-install');
+const btnPwaDismiss = document.getElementById('btn-pwa-dismiss');
 
 // Hybrid assignment system elements
 const projectModeSolo = document.getElementById('project-mode-solo');
@@ -2332,6 +2339,82 @@ if (editTaskModal) {
 if (editTaskForm) {
   editTaskForm.addEventListener('submit', updateTaskSubmit);
 }
+
+// =============================================================
+// 13. PWA INSTALLATION AND SERVICE WORKER LOGIC
+// =============================================================
+
+// Register core service worker for assets caching on window load
+window.addEventListener('load', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('[PWA] Service Worker registered successfully scope:', registration.scope);
+      })
+      .catch((err) => {
+        console.error('[PWA] Service Worker registration failed:', err);
+      });
+  }
+});
+
+// Intercept beforeinstallprompt browser event
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent browser's default prompt layout
+  e.preventDefault();
+
+  // Cache the event reference for deferred trigger
+  deferredPrompt = e;
+
+  // Reveal both the sidebar navigation option and floating popup banner
+  if (navInstallApp) navInstallApp.classList.remove('hidden');
+  if (pwaInstallBanner) pwaInstallBanner.classList.remove('hidden');
+});
+
+// Handle PWA installation trigger
+async function triggerPwaInstallation() {
+  if (!deferredPrompt) return;
+
+  // Prompt the user to install the application
+  deferredPrompt.prompt();
+
+  // Resolve choices
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`[PWA] Install prompt user decision outcome: ${outcome}`);
+
+  // Clear prompt caching
+  deferredPrompt = null;
+
+  // Hide the floating installer banner
+  if (pwaInstallBanner) pwaInstallBanner.classList.add('hidden');
+}
+
+// Bind custom prompt buttons
+if (btnPwaInstall) {
+  btnPwaInstall.addEventListener('click', triggerPwaInstallation);
+}
+
+if (navInstallApp) {
+  navInstallApp.addEventListener('click', (e) => {
+    e.preventDefault();
+    triggerPwaInstallation();
+  });
+}
+
+// Bind promo dismiss buttons
+if (btnPwaDismiss) {
+  btnPwaDismiss.addEventListener('click', () => {
+    // Hide custom banner but keep sidebar install action active
+    if (pwaInstallBanner) pwaInstallBanner.classList.add('hidden');
+  });
+}
+
+// Hide install promotions once app installed successfully
+window.addEventListener('appinstalled', () => {
+  console.log('[PWA] Move On Studio successfully installed on user desktop.');
+  if (pwaInstallBanner) pwaInstallBanner.classList.add('hidden');
+  if (navInstallApp) navInstallApp.classList.add('hidden');
+  deferredPrompt = null;
+});
 
 // Initial Boot setup
 setupSystemBanner();
