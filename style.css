@@ -1267,11 +1267,12 @@ body {
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
-    padding: 24px 24px 80px 24px; /* Added extra padding-bottom to protect bottom controls */
+    padding: 24px;
+    padding-bottom: 80px !important; /* Force space for bottom elements */
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    z-index: 1001;
-    overflow-y: auto; /* Allow drawer contents to be fully scrollable */
+    z-index: 999 !important; /* Ensure it stays above the status bar */
+    overflow-y: auto !important; /* Force sidebar internal scrolling */
   }
 
   .sidebar.active {
