@@ -952,6 +952,12 @@ body {
   border-color: rgba(var(--accent-green-rgb), 0.3);
 }
 
+.task-action-btn.edit-btn:hover {
+  color: var(--accent-blue);
+  background-color: rgba(var(--accent-blue-rgb), 0.08);
+  border-color: rgba(var(--accent-blue-rgb), 0.2);
+}
+
 .task-action-btn svg {
   width: 14px;
   height: 14px;

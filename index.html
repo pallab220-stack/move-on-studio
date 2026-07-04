@@ -262,8 +262,23 @@
                     <input type="date" id="task-date" required>
                   </div>
 
-                  <div class="form-group">
-                    <label for="task-assignee">Operational Officer</label>
+                  <div class="form-group col-span-2">
+                    <label>Project Mode</label>
+                    <div style="display: flex; gap: 20px; align-items: center; margin-top: 8px;">
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-primary);">
+                        <input type="radio" name="project-mode" value="Solo" checked id="project-mode-solo" style="accent-color: var(--accent-green);">
+                        Solo Project
+                      </label>
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-primary);">
+                        <input type="radio" name="project-mode" value="Team" id="project-mode-team" style="accent-color: var(--accent-green);">
+                        Team Project
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Solo Assignment View -->
+                  <div id="solo-assignment-view" class="form-group col-span-2">
+                    <label for="task-assignee">Lead Editor</label>
                     <select id="task-assignee" class="custom-select">
                       <option value="Sarah Connor">Sarah Connor (Developer)</option>
                       <option value="Marcus Aurelius">Marcus Aurelius (Admin)</option>
@@ -271,7 +286,31 @@
                     </select>
                   </div>
 
-                  <div class="form-group">
+                  <!-- Team Assignment View -->
+                  <div id="team-assignment-view" class="col-span-2" style="display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                      <div class="form-group">
+                        <label for="task-rough-cut-editor">Rough Cut Editor</label>
+                        <select id="task-rough-cut-editor" class="custom-select">
+                          <!-- Options populated dynamically -->
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="task-colorist">Colorist</label>
+                        <select id="task-colorist" class="custom-select">
+                          <!-- Options populated dynamically -->
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="task-motion-artist">Motion/VFX Artist</label>
+                        <select id="task-motion-artist" class="custom-select">
+                          <!-- Options populated dynamically -->
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group col-span-2">
                     <label for="task-tags">Classification Tag</label>
                     <select id="task-tags" class="custom-select">
                       <option value="Rough Cut & Assembly">Rough Cut & Assembly</option>
@@ -626,6 +665,192 @@
           Save Progress
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- 5. ADMIN EDIT TASK MODAL OVERLAY -->
+  <div class="modal-overlay" id="edit-task-modal" style="opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.3s ease, visibility 0.3s ease; z-index: 1001;">
+    <div class="modal-content glassmorphism" style="max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; background: rgba(9, 9, 11, 0.98); border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; position: relative;">
+      <button class="btn-close" id="btn-close-edit-modal" aria-label="Close modal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
+        <div class="header-indicator">
+          <span class="indicator-pulse green"></span>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); text-transform: none; letter-spacing: 0.5px;">Edit Operation Entry</h3>
+        </div>
+        <p class="modal-subtitle" style="font-family: monospace; font-size: 0.75rem; color: var(--accent-green); margin-top: 4px;">ADMIN PANEL // EDIT TASK</p>
+      </div>
+
+      <form id="edit-task-form" class="task-form">
+        <!-- Hidden input to store task ID -->
+        <input type="hidden" id="edit-task-id">
+
+        <!-- Task Category Selection -->
+        <div class="form-group col-span-2" id="edit-task-category-group" style="margin-bottom: 24px;">
+          <label>Operation Category</label>
+          <div class="category-cards-wrapper">
+            <div class="category-select-card active" data-category="editing" id="edit-cat-card-editing">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              </div>
+              <div class="card-text">
+                <h4>Editing Operation</h4>
+                <p>Post-production, grading & assembly</p>
+              </div>
+            </div>
+            <div class="category-select-card" data-category="shooting" id="edit-cat-card-shooting">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              </div>
+              <div class="card-text">
+                <h4>Shooting Operation</h4>
+                <p>On-site photo/video capture details</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editing Operation Form View -->
+        <div id="edit-form-editing-view">
+          <div class="form-grid">
+            <div class="form-group col-span-2">
+              <label for="edit-task-title">Operation Title</label>
+              <input type="text" id="edit-task-title" required placeholder="e.g., Cinematic Wedding Highlight Reel">
+            </div>
+            
+            <div class="form-group">
+              <label for="edit-task-priority">Priority Protocol</label>
+              <select id="edit-task-priority" class="custom-select">
+                <option value="high">HIGH [CRITICAL]</option>
+                <option value="medium" selected>MEDIUM [STANDARD]</option>
+                <option value="low">LOW [ROUTINE]</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-task-date">Completion Deadline</label>
+              <input type="date" id="edit-task-date" required>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label>Project Mode</label>
+              <div style="display: flex; gap: 20px; align-items: center; margin-top: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-primary);">
+                  <input type="radio" name="edit-project-mode" value="Solo" checked id="edit-project-mode-solo" style="accent-color: var(--accent-green);">
+                  Solo Project
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-primary);">
+                  <input type="radio" name="edit-project-mode" value="Team" id="edit-project-mode-team" style="accent-color: var(--accent-green);">
+                  Team Project
+                </label>
+              </div>
+            </div>
+
+            <!-- Solo Assignment View -->
+            <div id="edit-solo-assignment-view" class="form-group col-span-2">
+              <label for="edit-task-assignee">Lead Editor</label>
+              <select id="edit-task-assignee" class="custom-select">
+                <!-- Options populated dynamically -->
+              </select>
+            </div>
+
+            <!-- Team Assignment View -->
+            <div id="edit-team-assignment-view" class="col-span-2" style="display: none;">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <div class="form-group">
+                  <label for="edit-task-rough-cut-editor">Rough Cut Editor</label>
+                  <select id="edit-task-rough-cut-editor" class="custom-select">
+                    <!-- Options populated dynamically -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="edit-task-colorist">Colorist</label>
+                  <select id="edit-task-colorist" class="custom-select">
+                    <!-- Options populated dynamically -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="edit-task-motion-artist">Motion/VFX Artist</label>
+                  <select id="edit-task-motion-artist" class="custom-select">
+                    <!-- Options populated dynamically -->
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-task-tags">Classification Tag</label>
+              <select id="edit-task-tags" class="custom-select">
+                <option value="Rough Cut & Assembly">Rough Cut & Assembly</option>
+                <option value="DaVinci Resolve Color Grading">DaVinci Resolve Color Grading</option>
+                <option value="CapCut Short-Form Edit">CapCut Short-Form Edit</option>
+                <option value="Audio Sync & Sound Design">Audio Sync & Sound Design</option>
+                <option value="Cinematic">Cinematic</option>
+                <option value="Client Revisions">Client Revisions</option>
+                <option value="Final Render & Delivery">Final Render & Delivery</option>
+              </select>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-task-description">Operation Objectives / Details</label>
+              <textarea id="edit-task-description" rows="3" required placeholder="Describe task scope, technical deliverables, and core operational success criteria..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shooting Operation Form View -->
+        <div id="edit-form-shooting-view" style="display:none;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="edit-client-name">Client Name</label>
+              <input type="text" id="edit-client-name" placeholder="e.g., Emily Watson">
+            </div>
+            <div class="form-group">
+              <label for="edit-client-phone">Client Phone Number</label>
+              <input type="tel" id="edit-client-phone" placeholder="e.g., +123456789">
+            </div>
+            <div class="form-group col-span-2">
+              <label for="edit-shoot-place">Shoot Place / Location</label>
+              <input type="text" id="edit-shoot-place" placeholder="e.g., Central Park Plaza, NY">
+            </div>
+            <div class="form-group">
+              <label for="edit-shoot-date">Shoot Date</label>
+              <input type="date" id="edit-shoot-date">
+            </div>
+            <div class="form-group">
+              <label for="edit-shoot-time">Shoot Time</label>
+              <input type="time" id="edit-shoot-time">
+            </div>
+            <div class="form-group">
+              <label for="edit-shoot-photographer">Photographer</label>
+              <select id="edit-shoot-photographer" class="custom-select">
+                <!-- Options populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-shoot-cinematographer">Cinematographer</label>
+              <select id="edit-shoot-cinematographer" class="custom-select">
+                <!-- Options populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group col-span-2">
+              <label for="edit-shoot-description">Special Instructions / Details</label>
+              <textarea id="edit-shoot-description" rows="3" placeholder="Describe shoot schedule, specific equipment needs, or client special requests..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Submit/Cancel Controls -->
+        <div class="form-actions" style="margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-edit-form">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            Update Task
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

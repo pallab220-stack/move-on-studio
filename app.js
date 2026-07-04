@@ -96,6 +96,48 @@ const navTeamWorkload = document.getElementById('nav-team-workload');
 const navMonthlyAnalytics = document.getElementById('nav-monthly-analytics');
 const navAdmin = document.getElementById('nav-admin');
 
+// Hybrid assignment system elements
+const projectModeSolo = document.getElementById('project-mode-solo');
+const projectModeTeam = document.getElementById('project-mode-team');
+const soloAssignmentView = document.getElementById('solo-assignment-view');
+const teamAssignmentView = document.getElementById('team-assignment-view');
+const taskRoughCutEditor = document.getElementById('task-rough-cut-editor');
+const taskColorist = document.getElementById('task-colorist');
+const taskMotionArtist = document.getElementById('task-motion-artist');
+
+// Admin Edit Modal elements
+const editTaskModal = document.getElementById('edit-task-modal');
+const btnCloseEditModal = document.getElementById('btn-close-edit-modal');
+const btnCancelEditForm = document.getElementById('btn-cancel-edit-form');
+const editTaskForm = document.getElementById('edit-task-form');
+const editTaskIdInput = document.getElementById('edit-task-id');
+const editTaskCategoryGroup = document.getElementById('edit-task-category-group');
+const editCatCardEditing = document.getElementById('edit-cat-card-editing');
+const editCatCardShooting = document.getElementById('edit-cat-card-shooting');
+const editFormEditingView = document.getElementById('edit-form-editing-view');
+const editFormShootingView = document.getElementById('edit-form-shooting-view');
+const editTaskTitle = document.getElementById('edit-task-title');
+const editTaskPriority = document.getElementById('edit-task-priority');
+const editTaskDate = document.getElementById('edit-task-date');
+const editProjectModeSolo = document.getElementById('edit-project-mode-solo');
+const editProjectModeTeam = document.getElementById('edit-project-mode-team');
+const editSoloAssignmentView = document.getElementById('edit-solo-assignment-view');
+const editTeamAssignmentView = document.getElementById('edit-team-assignment-view');
+const editTaskAssignee = document.getElementById('edit-task-assignee');
+const editTaskRoughCutEditor = document.getElementById('edit-task-rough-cut-editor');
+const editTaskColorist = document.getElementById('edit-task-colorist');
+const editTaskMotionArtist = document.getElementById('edit-task-motion-artist');
+const editTaskTags = document.getElementById('edit-task-tags');
+const editTaskDescription = document.getElementById('edit-task-description');
+const editClientName = document.getElementById('edit-client-name');
+const editClientPhone = document.getElementById('edit-client-phone');
+const editShootPlace = document.getElementById('edit-shoot-place');
+const editShootDate = document.getElementById('edit-shoot-date');
+const editShootTime = document.getElementById('edit-shoot-time');
+const editShootPhotographer = document.getElementById('edit-shoot-photographer');
+const editShootCinematographer = document.getElementById('edit-shoot-cinematographer');
+const editShootDescription = document.getElementById('edit-shoot-description');
+
 // 3. SYSTEM CLOCK SETUP
 function updateClock() {
   const clockEl = document.getElementById('live-time');
@@ -314,8 +356,8 @@ function updateUIElements() {
 
 // 5. FIRESTORE REAL-TIME TASK ACTIONS
 
-// A. addTask(title, description, deadline, assignedTo)
-async function addTask(title, description, deadline, assignedTo, priority = 'medium', tags = 'General', extraData = null) {
+// A. addTask(title, description, deadline, assignedTo, priority, tags, extraData, projectType, teamData)
+async function addTask(title, description, deadline, assignedTo, priority = 'medium', tags = 'General', extraData = null, projectType = 'Solo', teamData = null) {
   try {
     const activeBranch = sessionStorage.getItem('selectedBranch') || 'moveon';
     const taskDoc = {
@@ -329,8 +371,19 @@ async function addTask(title, description, deadline, assignedTo, priority = 'med
       completed: false,
       progressUpdates: [],
       branch: activeBranch,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      projectType
     };
+
+    if (projectType === 'Solo') {
+      taskDoc.assignedTo = assignedTo || '';
+    } else {
+      taskDoc.roughCutEditor = teamData?.roughCutEditor || '';
+      taskDoc.colorist = teamData?.colorist || '';
+      taskDoc.motionArtist = teamData?.motionArtist || '';
+      // Set assignee to roughCutEditor for compatibility in general lists
+      taskDoc.assignee = teamData?.roughCutEditor || '';
+    }
 
     if (extraData) {
       taskDoc.extraData = extraData;
@@ -344,30 +397,33 @@ async function addTask(title, description, deadline, assignedTo, priority = 'med
     console.log("addTask: Successfully deployed to Firestore.");
 
     // Fetch assignee's FCM token from 'users' collection (check both name and email matching)
-    const usersRef = collection(db, "users");
-    const nameQuery = query(usersRef, where("name", "==", assignedTo));
-    const emailQuery = query(usersRef, where("email", "==", assignedTo));
+    const notifyName = projectType === 'Solo' ? assignedTo : (teamData?.roughCutEditor || '');
+    if (notifyName) {
+      const usersRef = collection(db, "users");
+      const nameQuery = query(usersRef, where("name", "==", notifyName));
+      const emailQuery = query(usersRef, where("email", "==", notifyName));
 
-    const [nameSnapshot, emailSnapshot] = await Promise.all([
-      getDocs(nameQuery),
-      getDocs(emailQuery)
-    ]);
+      const [nameSnapshot, emailSnapshot] = await Promise.all([
+        getDocs(nameQuery),
+        getDocs(emailQuery)
+      ]);
 
-    let assigneeToken = null;
-    nameSnapshot.forEach((docSnap) => {
-      if (docSnap.data().fcmToken) assigneeToken = docSnap.data().fcmToken;
-    });
-
-    if (!assigneeToken) {
-      emailSnapshot.forEach((docSnap) => {
+      let assigneeToken = null;
+      nameSnapshot.forEach((docSnap) => {
         if (docSnap.data().fcmToken) assigneeToken = docSnap.data().fcmToken;
       });
-    }
 
-    if (assigneeToken) {
-      await sendFCMNotification(assigneeToken, title, description);
-    } else {
-      console.log(`No FCM token found for assignee: ${assignedTo}`);
+      if (!assigneeToken) {
+        emailSnapshot.forEach((docSnap) => {
+          if (docSnap.data().fcmToken) assigneeToken = docSnap.data().fcmToken;
+        });
+      }
+
+      if (assigneeToken) {
+        await sendFCMNotification(assigneeToken, title, description);
+      } else {
+        console.log(`No FCM token found for assignee: ${notifyName}`);
+      }
     }
   } catch (error) {
     console.error("addTask error:", error.message);
@@ -522,12 +578,217 @@ async function deleteOldTask(id) {
   }
 }
 
+// G. Admin Task Edit Feature methods
+function openEditModal() {
+  if (editTaskModal) {
+    editTaskModal.style.opacity = '1';
+    editTaskModal.style.visibility = 'visible';
+    editTaskModal.style.pointerEvents = 'auto';
+  }
+}
+
+function closeEditModal() {
+  if (editTaskModal) {
+    editTaskModal.style.opacity = '0';
+    editTaskModal.style.visibility = 'hidden';
+    editTaskModal.style.pointerEvents = 'none';
+    editTaskForm.reset();
+    toggleEditProjectMode();
+  }
+}
+
+// Toggle project mode fields in Edit Task Modal
+function toggleEditProjectMode() {
+  if (editProjectModeSolo && editProjectModeSolo.checked) {
+    if (editSoloAssignmentView) editSoloAssignmentView.style.display = 'block';
+    if (editTeamAssignmentView) editTeamAssignmentView.style.display = 'none';
+  } else if (editProjectModeTeam && editProjectModeTeam.checked) {
+    if (editSoloAssignmentView) editSoloAssignmentView.style.display = 'none';
+    if (editTeamAssignmentView) editTeamAssignmentView.style.display = 'block';
+  }
+}
+
+async function editTask(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) {
+    console.error("editTask: Task not found locally:", taskId);
+    return;
+  }
+
+  // Populate hidden ID field
+  if (editTaskIdInput) editTaskIdInput.value = taskId;
+
+  const isShooting = task.extraData && task.extraData.category === 'shooting';
+
+  // Toggle category select cards active states
+  if (isShooting) {
+    if (editCatCardShooting) editCatCardShooting.classList.add('active');
+    if (editCatCardEditing) editCatCardEditing.classList.remove('active');
+    if (editFormShootingView) editFormShootingView.style.display = 'block';
+    if (editFormEditingView) editFormEditingView.style.display = 'none';
+
+    // Populate Shooting details
+    if (editClientName) editClientName.value = task.extraData.clientName || '';
+    if (editClientPhone) editClientPhone.value = task.extraData.clientPhone || '';
+    if (editShootPlace) editShootPlace.value = task.extraData.shootPlace || '';
+    if (editShootDate) editShootDate.value = task.extraData.shootDate || '';
+    if (editShootTime) editShootTime.value = task.extraData.shootTime || '';
+    if (editShootPhotographer) editShootPhotographer.value = task.extraData.photographer || '';
+    if (editShootCinematographer) editShootCinematographer.value = task.extraData.cinematographer || '';
+    if (editShootDescription) editShootDescription.value = task.description || '';
+  } else {
+    if (editCatCardEditing) editCatCardEditing.classList.add('active');
+    if (editCatCardShooting) editCatCardShooting.classList.remove('active');
+    if (editFormShootingView) editFormShootingView.style.display = 'none';
+    if (editFormEditingView) editFormEditingView.style.display = 'block';
+
+    // Populate Editing details
+    if (editTaskTitle) editTaskTitle.value = task.title || '';
+    if (editTaskPriority) editTaskPriority.value = task.priority || 'medium';
+    if (editTaskDate) editTaskDate.value = task.date || '';
+    if (editTaskTags) editTaskTags.value = task.tags || '';
+    if (editTaskDescription) editTaskDescription.value = task.description || '';
+
+    // Handle Project Mode toggle
+    const isTeam = task.projectType === 'Team';
+    if (isTeam) {
+      if (editProjectModeTeam) editProjectModeTeam.checked = true;
+      if (editProjectModeSolo) editProjectModeSolo.checked = false;
+      if (editSoloAssignmentView) editSoloAssignmentView.style.display = 'none';
+      if (editTeamAssignmentView) editTeamAssignmentView.style.display = 'block';
+
+      if (editTaskRoughCutEditor) editTaskRoughCutEditor.value = task.roughCutEditor || '';
+      if (editTaskColorist) editTaskColorist.value = task.colorist || '';
+      if (editTaskMotionArtist) editTaskMotionArtist.value = task.motionArtist || '';
+    } else {
+      if (editProjectModeSolo) editProjectModeSolo.checked = true;
+      if (editProjectModeTeam) editProjectModeTeam.checked = false;
+      if (editSoloAssignmentView) editSoloAssignmentView.style.display = 'block';
+      if (editTeamAssignmentView) editTeamAssignmentView.style.display = 'none';
+
+      if (editTaskAssignee) editTaskAssignee.value = task.assignee || task.assignedTo || '';
+    }
+  }
+
+  openEditModal();
+}
+
+async function updateTaskSubmit(e) {
+  e.preventDefault();
+
+  const taskId = editTaskIdInput ? editTaskIdInput.value : '';
+  if (!taskId) return;
+
+  const activeCard = editTaskCategoryGroup.querySelector('.category-select-card.active');
+  const category = activeCard ? activeCard.getAttribute('data-category') : 'editing';
+
+  const updateDocData = {};
+
+  if (category === 'shooting') {
+    const clientNameVal = editClientName.value.trim();
+    const shootPlaceVal = editShootPlace.value.trim();
+    const shootDateVal = editShootDate.value;
+
+    updateDocData.title = `Shoot: ${clientNameVal} - ${shootPlaceVal || 'TBD'}`;
+    updateDocData.description = editShootDescription.value.trim() || 'No instructions provided.';
+    updateDocData.date = shootDateVal;
+    
+    // Default system values for shooting assignee/priority/tags
+    const photographerVal = editShootPhotographer.value;
+    updateDocData.assignee = photographerVal || 'Unassigned';
+    updateDocData.priority = 'medium';
+    updateDocData.tags = 'Shooting Operation';
+
+    updateDocData.extraData = {
+      category: 'shooting',
+      shootDate: shootDateVal || '',
+      shootTime: editShootTime.value || '',
+      photographer: photographerVal || '',
+      cinematographer: editShootCinematographer.value || '',
+      clientName: clientNameVal,
+      clientPhone: editClientPhone.value.trim() || '',
+      shootPlace: shootPlaceVal
+    };
+
+    updateDocData.projectType = 'Solo';
+    updateDocData.assignedTo = '';
+    updateDocData.roughCutEditor = '';
+    updateDocData.colorist = '';
+    updateDocData.motionArtist = '';
+  } else {
+    // Collect standard editing details
+    const titleVal = editTaskTitle.value.trim();
+    const descriptionVal = editTaskDescription.value.trim();
+    const dateVal = editTaskDate.value;
+    const tagsVal = editTaskTags.value;
+    const priorityVal = editTaskPriority.value;
+
+    updateDocData.title = titleVal;
+    updateDocData.description = descriptionVal;
+    updateDocData.date = dateVal;
+    updateDocData.tags = tagsVal;
+    updateDocData.priority = priorityVal;
+
+    // Check project mode
+    const isSoloChecked = editProjectModeSolo?.checked;
+    if (isSoloChecked) {
+      updateDocData.projectType = 'Solo';
+      const assigneeVal = editTaskAssignee.value;
+      updateDocData.assignee = assigneeVal;
+      updateDocData.assignedTo = assigneeVal;
+
+      updateDocData.roughCutEditor = '';
+      updateDocData.colorist = '';
+      updateDocData.motionArtist = '';
+    } else {
+      updateDocData.projectType = 'Team';
+      const roughVal = editTaskRoughCutEditor.value;
+      updateDocData.roughCutEditor = roughVal;
+      updateDocData.colorist = editTaskColorist.value;
+      updateDocData.motionArtist = editTaskMotionArtist.value;
+      
+      updateDocData.assignee = roughVal; // fallback primary assignee
+      updateDocData.assignedTo = '';
+    }
+
+    const activeBranch = sessionStorage.getItem('selectedBranch') || 'moveon';
+    if (activeBranch === 'jadukor') {
+      updateDocData.extraData = { category: 'editing' };
+    } else {
+      updateDocData.extraData = null;
+    }
+  }
+
+  try {
+    const taskDocRef = doc(db, "tasks", taskId);
+    await updateDoc(taskDocRef, updateDocData);
+    console.log("updateTaskSubmit: Successfully updated task document inside Firestore.");
+
+    closeEditModal();
+    showLocalNotificationToast("Task Updated", "Operation details successfully written to database.");
+  } catch (error) {
+    console.error("updateTaskSubmit Error:", error.message);
+    alert(`Failed to update task: ${error.message}`);
+  }
+}
+
 // Function to fetch all user documents and populate the assignee dropdown
 // Function to fetch all user documents and populate user-selection dropdowns
 async function fetchUsersAndPopulateDropdown() {
   const assigneeSelect = document.getElementById('task-assignee');
   const photographerSelect = document.getElementById('shoot-photographer');
   const cinematographerSelect = document.getElementById('shoot-cinematographer');
+  
+  const roughSelect = document.getElementById('task-rough-cut-editor');
+  const colorSelect = document.getElementById('task-colorist');
+  const motionSelect = document.getElementById('task-motion-artist');
+
+  const editAssigneeSelect = document.getElementById('edit-task-assignee');
+  const editPhotographerSelect = document.getElementById('edit-shoot-photographer');
+  const editCinematographerSelect = document.getElementById('edit-shoot-cinematographer');
+  const editRoughSelect = document.getElementById('edit-task-rough-cut-editor');
+  const editColorSelect = document.getElementById('edit-task-colorist');
+  const editMotionSelect = document.getElementById('edit-task-motion-artist');
 
   try {
     const querySnapshot = await getDocs(collection(db, "users"));
@@ -541,6 +802,21 @@ async function fetchUsersAndPopulateDropdown() {
     if (cinematographerSelect) {
       cinematographerSelect.innerHTML = '<option value="">-- Select Cinematographer --</option>';
     }
+
+    if (roughSelect) roughSelect.innerHTML = '';
+    if (colorSelect) colorSelect.innerHTML = '';
+    if (motionSelect) motionSelect.innerHTML = '';
+
+    if (editAssigneeSelect) editAssigneeSelect.innerHTML = '';
+    if (editPhotographerSelect) {
+      editPhotographerSelect.innerHTML = '<option value="">-- Select Photographer --</option>';
+    }
+    if (editCinematographerSelect) {
+      editCinematographerSelect.innerHTML = '<option value="">-- Select Cinematographer --</option>';
+    }
+    if (editRoughSelect) editRoughSelect.innerHTML = '';
+    if (editColorSelect) editColorSelect.innerHTML = '';
+    if (editMotionSelect) editMotionSelect.innerHTML = '';
 
     querySnapshot.forEach((docSnap) => {
       const userData = docSnap.data();
@@ -571,9 +847,67 @@ async function fetchUsersAndPopulateDropdown() {
           opt.textContent = optionVal;
           cinematographerSelect.appendChild(opt);
         }
+
+        // Populate dynamic creation Team mode dropdowns
+        if (roughSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          roughSelect.appendChild(opt);
+        }
+        if (colorSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          colorSelect.appendChild(opt);
+        }
+        if (motionSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          motionSelect.appendChild(opt);
+        }
+
+        // Populate dynamic edit dropdowns
+        if (editAssigneeSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          editAssigneeSelect.appendChild(opt);
+        }
+        if (editPhotographerSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          editPhotographerSelect.appendChild(opt);
+        }
+        if (editCinematographerSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          editCinematographerSelect.appendChild(opt);
+        }
+        if (editRoughSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          editRoughSelect.appendChild(opt);
+        }
+        if (editColorSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          editColorSelect.appendChild(opt);
+        }
+        if (editMotionSelect) {
+          const opt = document.createElement('option');
+          opt.value = optionVal;
+          opt.textContent = optionVal;
+          editMotionSelect.appendChild(opt);
+        }
       }
     });
-    console.log("fetchUsersAndPopulateDropdown: Assignee, Photographer, and Cinematographer dropdowns successfully populated.");
+    console.log("fetchUsersAndPopulateDropdown: All dropdown controls initialized.");
   } catch (error) {
     console.error("fetchUsersAndPopulateDropdown Error:", error.message);
   }
@@ -595,7 +929,14 @@ function renderTaskGrid() {
         const isCinema = task.cinematographer === userDisplayName;
         if (!isPhoto && !isCinema) return false;
       } else {
-        if (task.assignee !== userDisplayName) return false;
+        if (task.projectType === 'Team') {
+          const isRough = task.roughCutEditor === userDisplayName;
+          const isColor = task.colorist === userDisplayName;
+          const isMotion = task.motionArtist === userDisplayName;
+          if (!isRough && !isColor && !isMotion) return false;
+        } else {
+          if (task.assignee !== userDisplayName && task.assignedTo !== userDisplayName) return false;
+        }
       }
     }
 
@@ -635,17 +976,49 @@ function renderTaskGrid() {
     
     // Fallback initials for assignee or photographer
     const avatarName = task.assignee || task.photographer || 'U';
-    const initials = avatarName.split(' ').map(name => name[0]).join('');
+    const initials = avatarName.split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+
+    let assigneeFooterHtml = '';
+    const isShootingTask = task.extraData && task.extraData.category === 'shooting';
+    if (!isShootingTask && task.projectType === 'Team') {
+      const roughInit = (task.roughCutEditor || 'U').split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+      const colorInit = (task.colorist || 'U').split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+      const motionInit = (task.motionArtist || 'U').split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+
+      assigneeFooterHtml = `
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+          <div class="task-assignee-badge" title="Rough Cut: ${task.roughCutEditor || 'Unassigned'}">
+            <div class="task-assignee-avatar" style="background: rgba(var(--accent-blue-rgb), 0.15); border: 1px solid var(--accent-blue); color: var(--accent-blue);">${roughInit}</div>
+            <span class="task-assignee-name">Rough: ${task.roughCutEditor || 'Unassigned'}</span>
+          </div>
+          <div class="task-assignee-badge" title="Colorist: ${task.colorist || 'Unassigned'}">
+            <div class="task-assignee-avatar" style="background: rgba(var(--accent-purple-rgb), 0.15); border: 1px solid var(--accent-purple); color: var(--accent-purple);">${colorInit}</div>
+            <span class="task-assignee-name">Color: ${task.colorist || 'Unassigned'}</span>
+          </div>
+          <div class="task-assignee-badge" title="Motion/VFX: ${task.motionArtist || 'Unassigned'}">
+            <div class="task-assignee-avatar" style="background: rgba(var(--accent-green-rgb), 0.15); border: 1px solid var(--accent-green); color: var(--accent-green);">${motionInit}</div>
+            <span class="task-assignee-name">Motion: ${task.motionArtist || 'Unassigned'}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      assigneeFooterHtml = `
+        <div class="task-assignee-badge">
+          <div class="task-assignee-avatar">${initials}</div>
+          <span class="task-assignee-name">${task.assignee || 'Unassigned'}</span>
+        </div>
+      `;
+    }
 
     // Determine user's specific role badge
     let userRoleInTask = '';
     const isAdmin = currentUser && currentUser.role === 'admin';
     const isShooting = task.extraData && task.extraData.category === 'shooting';
 
-    if (isAdmin) {
-      userRoleInTask = isShooting ? 'Admin (Shooting)' : 'Admin (Editing)';
-    } else {
-      if (isShooting) {
+    if (isShooting) {
+      if (isAdmin) {
+        userRoleInTask = 'Admin (Shooting)';
+      } else {
         const isPhoto = task.photographer === userDisplayName;
         const isCinema = task.cinematographer === userDisplayName;
         if (isPhoto && isCinema) {
@@ -657,8 +1030,31 @@ function renderTaskGrid() {
         } else {
           userRoleInTask = 'Operator';
         }
+      }
+    } else {
+      // Editing Task
+      if (task.projectType === 'Team') {
+        const roles = [];
+        if (task.roughCutEditor === userDisplayName) roles.push('Rough Cut Editor');
+        if (task.colorist === userDisplayName) roles.push('Colorist');
+        if (task.motionArtist === userDisplayName) roles.push('Motion/VFX Artist');
+        
+        if (roles.length > 0) {
+          userRoleInTask = roles.join(', ');
+        } else if (isAdmin) {
+          userRoleInTask = 'Admin (Team)';
+        } else {
+          userRoleInTask = 'Editor';
+        }
       } else {
-        userRoleInTask = 'Editor';
+        // Solo or default
+        if (isAdmin) {
+          userRoleInTask = 'Admin (Editing)';
+        } else if (task.assignee === userDisplayName || task.assignedTo === userDisplayName) {
+          userRoleInTask = 'Lead Editor';
+        } else {
+          userRoleInTask = 'Editor';
+        }
       }
     }
 
@@ -678,6 +1074,9 @@ function renderTaskGrid() {
       actionsHtml = `
         <button class="task-action-btn complete-btn ${task.status === 'completed' ? 'active-completed' : ''}" title="${task.status === 'completed' ? 'Re-open task' : 'Mark Completed'}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </button>
+        <button class="task-action-btn edit-btn" title="Edit Task Details">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
         </button>
         <button class="task-action-btn delete-btn" title="Decommission Task">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
@@ -774,10 +1173,7 @@ function renderTaskGrid() {
           <span>${isOverdue ? 'OVERDUE: ' : ''}${task.date}</span>
         </div>
 
-        <div class="task-assignee-badge">
-          <div class="task-assignee-avatar">${initials}</div>
-          <span class="task-assignee-name">${task.assignee}</span>
-        </div>
+        ${assigneeFooterHtml}
       </div>
 
       ${updatesSectionHtml}
@@ -787,6 +1183,14 @@ function renderTaskGrid() {
     if (currentUser && currentUser.role === 'admin') {
       const completeBtn = card.querySelector('.complete-btn');
       completeBtn.addEventListener('click', () => toggleTaskCompletion(task.id));
+
+      const editBtn = card.querySelector('.edit-btn');
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editTask(task.id);
+        });
+      }
 
       const deleteBtn = card.querySelector('.delete-btn');
       deleteBtn.addEventListener('click', () => deleteOldTask(task.id));
@@ -862,7 +1266,11 @@ function updateDashboardStats(tasksList) {
         if (isShooting) {
           return t.photographer === userDisplayName || t.cinematographer === userDisplayName;
         } else {
-          return t.assignee === userDisplayName;
+          if (t.projectType === 'Team') {
+            return t.roughCutEditor === userDisplayName || t.colorist === userDisplayName || t.motionArtist === userDisplayName;
+          } else {
+            return t.assignee === userDisplayName || t.assignedTo === userDisplayName;
+          }
         }
       });
 
@@ -958,6 +1366,8 @@ addTaskForm.addEventListener('submit', (e) => {
   const category = activeCard ? activeCard.getAttribute('data-category') : 'editing';
 
   let title, description, date, assignee, priority, tags, extraData = null;
+  let projectType = 'Solo';
+  let teamData = null;
 
   if (activeBranch === 'jadukor' && category === 'shooting') {
     // Collect shooting-specific data
@@ -989,9 +1399,22 @@ addTaskForm.addEventListener('submit', (e) => {
     title = document.getElementById('task-title').value.trim();
     description = document.getElementById('task-description').value.trim();
     date = document.getElementById('task-date').value;
-    assignee = document.getElementById('task-assignee').value;
     tags = document.getElementById('task-tags').value;
     priority = document.getElementById('task-priority').value;
+
+    const isSoloChecked = document.getElementById('project-mode-solo')?.checked;
+    if (isSoloChecked) {
+      projectType = 'Solo';
+      assignee = document.getElementById('task-assignee').value;
+    } else {
+      projectType = 'Team';
+      assignee = document.getElementById('task-rough-cut-editor').value;
+      teamData = {
+        roughCutEditor: document.getElementById('task-rough-cut-editor').value,
+        colorist: document.getElementById('task-colorist').value,
+        motionArtist: document.getElementById('task-motion-artist').value
+      };
+    }
 
     if (activeBranch === 'jadukor') {
       extraData = { category: 'editing' };
@@ -1000,8 +1423,9 @@ addTaskForm.addEventListener('submit', (e) => {
 
   if (!title || !date || !description) return;
 
-  addTask(title, description, date, assignee, priority, tags, extraData);
+  addTask(title, description, date, assignee, priority, tags, extraData, projectType, teamData);
   addTaskForm.reset();
+  toggleCreateProjectMode();
   adjustDynamicFormForBranch();
 
   document.querySelector('.task-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1020,6 +1444,7 @@ btnNewTaskShortcut.addEventListener('click', () => {
 
 btnCancelForm.addEventListener('click', () => {
   addTaskForm.reset();
+  toggleCreateProjectMode();
 });
 
 // Search and tab filters
@@ -1264,12 +1689,28 @@ async function renderTeamWorkload() {
 
     tasks.forEach(task => {
       if (task.status === 'pending' || task.status === 'updating') {
-        const assignee = task.assignee;
-        if (userTaskCounts[assignee] !== undefined) {
-          userTaskCounts[assignee]++;
+        if (task.projectType === 'Team') {
+          const editors = [task.roughCutEditor, task.colorist, task.motionArtist];
+          editors.forEach(editor => {
+            if (editor) {
+              if (userTaskCounts[editor] !== undefined) {
+                userTaskCounts[editor]++;
+              } else {
+                userTaskCounts[editor] = 1;
+                usersList.push(editor);
+              }
+            }
+          });
         } else {
-          userTaskCounts[assignee] = 1;
-          usersList.push(assignee);
+          const assignee = task.assignee || task.assignedTo;
+          if (assignee) {
+            if (userTaskCounts[assignee] !== undefined) {
+              userTaskCounts[assignee]++;
+            } else {
+              userTaskCounts[assignee] = 1;
+              usersList.push(assignee);
+            }
+          }
         }
       }
     });
@@ -1830,6 +2271,66 @@ if (btnSaveProgress) {
       alert("Error saving progress: " + error.message);
     }
   });
+}
+
+// Bind click listeners for category select cards in Edit Modal
+if (editCatCardEditing && editCatCardShooting) {
+  editCatCardEditing.addEventListener('click', () => {
+    editCatCardEditing.classList.add('active');
+    editCatCardShooting.classList.remove('active');
+    if (editFormEditingView) editFormEditingView.style.display = 'block';
+    if (editFormShootingView) editFormShootingView.style.display = 'none';
+  });
+
+  editCatCardShooting.addEventListener('click', () => {
+    editCatCardShooting.classList.add('active');
+    editCatCardEditing.classList.remove('active');
+    if (editFormEditingView) editFormEditingView.style.display = 'none';
+    if (editFormShootingView) editFormShootingView.style.display = 'block';
+  });
+}
+
+// Bind project mode toggle changes
+function toggleCreateProjectMode() {
+  if (projectModeSolo && projectModeSolo.checked) {
+    if (soloAssignmentView) soloAssignmentView.style.display = 'block';
+    if (teamAssignmentView) teamAssignmentView.style.display = 'none';
+  } else if (projectModeTeam && projectModeTeam.checked) {
+    if (soloAssignmentView) soloAssignmentView.style.display = 'none';
+    if (teamAssignmentView) teamAssignmentView.style.display = 'block';
+  }
+}
+
+if (projectModeSolo && projectModeTeam) {
+  projectModeSolo.addEventListener('change', toggleCreateProjectMode);
+  projectModeTeam.addEventListener('change', toggleCreateProjectMode);
+}
+
+if (editProjectModeSolo && editProjectModeTeam) {
+  editProjectModeSolo.addEventListener('change', toggleEditProjectMode);
+  editProjectModeTeam.addEventListener('change', toggleEditProjectMode);
+}
+
+// Bind Close / Cancel event listeners for Edit Modal
+if (btnCloseEditModal) {
+  btnCloseEditModal.addEventListener('click', closeEditModal);
+}
+
+if (btnCancelEditForm) {
+  btnCancelEditForm.addEventListener('click', closeEditModal);
+}
+
+if (editTaskModal) {
+  editTaskModal.addEventListener('click', (e) => {
+    if (e.target === editTaskModal) {
+      closeEditModal();
+    }
+  });
+}
+
+// Bind Edit Task Form submit handler
+if (editTaskForm) {
+  editTaskForm.addEventListener('submit', updateTaskSubmit);
 }
 
 // Initial Boot setup
