@@ -1931,6 +1931,13 @@ function showBranchGateway() {
   const appLayout = document.querySelector('.app-layout');
   const gatewayScreen = document.getElementById('branch-gateway');
 
+  // Reset mobile sidebar drawer and backdrop overlays
+  if (sidebarEl) sidebarEl.classList.remove('active');
+  if (sidebarOverlay) {
+    sidebarOverlay.classList.remove('active');
+    sidebarOverlay.style.display = 'none';
+  }
+
   currentBranch = null;
   sessionStorage.removeItem('selectedBranch');
 
@@ -2050,6 +2057,11 @@ const btnSwitchBranch = document.getElementById('nav-switch-branch');
 if (btnSwitchBranch) {
   btnSwitchBranch.addEventListener('click', (e) => {
     e.preventDefault();
+    if (sidebarEl) sidebarEl.classList.remove('active');
+    if (sidebarOverlay) {
+      sidebarOverlay.classList.remove('active');
+      sidebarOverlay.style.display = 'none';
+    }
     showBranchGateway();
   });
 }
@@ -2430,14 +2442,20 @@ window.addEventListener('appinstalled', () => {
 if (mobileMenuToggle) {
   mobileMenuToggle.addEventListener('click', () => {
     if (sidebarEl) sidebarEl.classList.add('active');
-    if (sidebarOverlay) sidebarOverlay.classList.add('active');
+    if (sidebarOverlay) {
+      sidebarOverlay.style.display = 'block'; // force clear and reveal display wrapper
+      sidebarOverlay.classList.add('active');
+    }
   });
 }
 
 // Close mobile drawer
 function closeMobileSidebar() {
   if (sidebarEl) sidebarEl.classList.remove('active');
-  if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+  if (sidebarOverlay) {
+    sidebarOverlay.classList.remove('active');
+    sidebarOverlay.style.display = 'none'; // reset to block elements interaction
+  }
 }
 
 if (mobileSidebarClose) {

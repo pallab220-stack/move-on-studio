@@ -1355,14 +1355,15 @@ body {
     background-color: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    z-index: 1000;
+    z-index: 990 !important; /* Ensure it stays behind the sidebar (z-index 999) */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
-    display: block !important;
+    display: none; /* Hidden by default */
   }
 
   #sidebar-overlay.active {
+    display: block !important; /* Force block layout when active */
     opacity: 1;
     pointer-events: auto;
   }
