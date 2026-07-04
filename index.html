@@ -48,9 +48,13 @@
   <!-- App Container -->
   <div class="app-layout hidden">
     
+    <!-- Sidebar Overlay Backdrop -->
+    <div id="sidebar-overlay" class="hidden"></div>
+    
     <!-- 1. SIDEBAR NAVIGATION -->
     <aside class="sidebar">
       <div class="sidebar-header">
+        <button id="mobile-sidebar-close" class="mobile-only" aria-label="Close sidebar">×</button>
         <div class="logo">
           <img src="logo.png" alt="Move On Logo" class="agency-logo">
         </div>
@@ -125,6 +129,7 @@
       
       <!-- Top Header -->
       <header class="content-header">
+        <button id="mobile-menu-toggle" class="mobile-only" aria-label="Toggle Menu">☰</button>
         <div class="header-greeting">
           <span class="system-time" id="live-time">SYS_TIME: 17:04:22 // REGION_06</span>
           <h1 id="greeting-title">Welcome back, Administrator</h1>

@@ -97,6 +97,12 @@ const navTeamWorkload = document.getElementById('nav-team-workload');
 const navMonthlyAnalytics = document.getElementById('nav-monthly-analytics');
 const navAdmin = document.getElementById('nav-admin');
 
+// Mobile sidebar layout elements
+const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const sidebarEl = document.querySelector('.sidebar');
+
 // PWA installation UI elements
 const navInstallApp = document.getElementById('nav-install-app');
 const pwaInstallBanner = document.getElementById('pwa-install-banner');
@@ -2414,6 +2420,42 @@ window.addEventListener('appinstalled', () => {
   if (pwaInstallBanner) pwaInstallBanner.classList.add('hidden');
   if (navInstallApp) navInstallApp.classList.add('hidden');
   deferredPrompt = null;
+});
+
+// =============================================================
+// 14. RESPONSIVE SIDEBAR MOBILE INTERACTIONS
+// =============================================================
+
+// Open mobile drawer
+if (mobileMenuToggle) {
+  mobileMenuToggle.addEventListener('click', () => {
+    if (sidebarEl) sidebarEl.classList.add('active');
+    if (sidebarOverlay) sidebarOverlay.classList.add('active');
+  });
+}
+
+// Close mobile drawer
+function closeMobileSidebar() {
+  if (sidebarEl) sidebarEl.classList.remove('active');
+  if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+}
+
+if (mobileSidebarClose) {
+  mobileSidebarClose.addEventListener('click', closeMobileSidebar);
+}
+
+if (sidebarOverlay) {
+  sidebarOverlay.addEventListener('click', closeMobileSidebar);
+}
+
+// Auto-hide mobile drawer when workspace navigation link is clicked
+const sidebarNavLinks = document.querySelectorAll('.sidebar-menu a');
+sidebarNavLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      closeMobileSidebar();
+    }
+  });
 });
 
 // Initial Boot setup
